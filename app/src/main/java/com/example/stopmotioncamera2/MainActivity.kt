@@ -1,6 +1,7 @@
 package com.example.stopmotioncamera2
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -16,8 +17,10 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -72,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                 dateFolder!!.mkdirs()
             }
         }
-        val photoFile = createPhotoFile()
+        val photoFile = createPhotoFile(this)
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
@@ -124,11 +127,16 @@ class MainActivity : AppCompatActivity() {
                 )
                 .build()
 
-
+            val preview = Preview.Builder().setResolutionSelector(resolutionSelector).build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
                 cameraProvider.unbindAll()
                 imageCapture = ImageCapture.Builder().setResolutionSelector(resolutionSelector).build()
+                val camera =
+                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
 
 
             } catch (e: Exception) {
@@ -159,7 +167,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun createPhotoFile(): File {
+    fun createPhotoFile(context: Context): File {
         val picturesDir =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
