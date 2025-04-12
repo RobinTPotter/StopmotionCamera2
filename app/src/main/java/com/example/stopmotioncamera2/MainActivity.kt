@@ -1,7 +1,6 @@
 package com.example.stopmotioncamera2
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -38,8 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
     private var savedImages: MutableList<File> = mutableListOf()
-    private var dateFolder: File? = null
-    private var outputFolder: File? =null
+    private var outputFolder: File? = null
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +45,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
-        window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        window.insetsController?.systemBarsBehavior =
+            WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         previewView = findViewById(R.id.previewView)
         onionSkinView = findViewById(R.id.onionSkinView)
@@ -75,14 +74,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture() {
-        if (dateFolder == null) {
-            val date = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
-            dateFolder = File(date)
-            if (dateFolder!!.exists()) {
-                dateFolder!!.mkdirs()
-            }
-        }
-        val photoFile = createPhotoFile(this)
+
+        val photoFile = createPhotoFile()
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
@@ -141,9 +134,9 @@ class MainActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                imageCapture = ImageCapture.Builder().setResolutionSelector(resolutionSelector).build()
-                val camera =
-                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                imageCapture =
+                    ImageCapture.Builder().setResolutionSelector(resolutionSelector).build()
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
 
 
             } catch (e: Exception) {
@@ -174,7 +167,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun createPhotoFile(context: Context): File {
+    private fun createPhotoFile(): File {
         val picturesDir =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
@@ -182,6 +175,15 @@ class MainActivity : AppCompatActivity() {
 
         if (!outputFolder!!.exists()) {
             outputFolder!!.mkdirs()
+        } else {
+            var count = 0
+            this.outputFolder!!.listFiles()?.forEach {
+                if (String.format("%05d.jpg", count) != it.name) {
+                    val res = it.renameTo(File(String.format("%s/%05d.jpg", outputFolder, count)))
+                    Log.i("GetNewName", "renaming %s %s".format(it, res))
+                }
+                count++
+            }
         }
 
         // Find next available number
