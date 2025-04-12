@@ -2,7 +2,10 @@ package com.example.stopmotioncamera2
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -69,14 +72,10 @@ class MainActivity : AppCompatActivity() {
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-
-
     }
 
     private fun takePicture() {
-
         val photoFile = createPhotoFile()
-
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
             outputOptions,
@@ -94,15 +93,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
-
-
     }
 
     private fun updateOnionSkins() {
-        val lastImage = savedImages.lastOrNull() ?: return
-        val bitmap = BitmapFactory.decodeFile(lastImage.absolutePath)
-        Log.i("CameraX", lastImage.absolutePath)
-        onionSkinView.setImageBitmap(bitmap)
+        val skins =1
+        val alpha = 0.5f
+        var first = true
+        var bmm: Bitmap? =null
+        var c : Canvas? =null
+        var resultBitmap : Bitmap? =null
+        for (si in savedImages.size-skins-1 until(savedImages.size)) {
+            if (si<0) continue
+            val bm = BitmapFactory.decodeFile(savedImages[si].absolutePath)
+            if (first) {
+                resultBitmap = bm.copy(Bitmap.Config.ARGB_8888, true)
+                c = Canvas(resultBitmap)
+                first = false
+            } else {
+                // Set up the paint with the desired alpha
+                val paint = Paint().apply {
+                    this.alpha = (alpha * 255).toInt()  // 50% alpha = 127
+                    isFilterBitmap = true
+                }
+
+                // Draw the overlay bitmap on top of the base bitmap
+                c?.drawBitmap(bm, 0f, 0f, paint)
+
+            }
+
+        }
+        onionSkinView.setImageBitmap(resultBitmap)
+
+
+
+//
+//
+//
+//        val lastImage = savedImages.lastOrNull() ?: return
+//        val bitmap = BitmapFactory.decodeFile(lastImage.absolutePath)
+//        Log.i("CameraX", lastImage.absolutePath)
+//        onionSkinView.setImageBitmap(bitmap)
     }
 
     @OptIn(ExperimentalCamera2Interop::class)
@@ -111,8 +141,6 @@ class MainActivity : AppCompatActivity() {
 
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-
-
             val resolutionSelector = ResolutionSelector.Builder()
                 .setAspectRatioStrategy(
                     AspectRatioStrategy(
@@ -126,7 +154,6 @@ class MainActivity : AppCompatActivity() {
                     )
                 )
                 .build()
-
             val preview = Preview.Builder().setResolutionSelector(resolutionSelector).build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
@@ -138,12 +165,10 @@ class MainActivity : AppCompatActivity() {
                     ImageCapture.Builder().setResolutionSelector(resolutionSelector).build()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
 
-
             } catch (e: Exception) {
                 Log.e("CameraX", "Camera binding failed", e)
             }
         }, ContextCompat.getMainExecutor(this))
-
     }
 
     private fun allPermissionsGranted(): Boolean {
@@ -191,7 +216,6 @@ class MainActivity : AppCompatActivity() {
         val fileName = String.format("%05d.jpg", nextNumber)
         return File(outputFolder, fileName)
     }
-
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
