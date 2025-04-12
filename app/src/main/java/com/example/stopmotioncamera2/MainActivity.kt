@@ -97,7 +97,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateOnionSkins() {
         val skins =1
-        val alpha = 0.5f
+        val startalpha = 0.6f
+        var  alpha =startalpha
         var first = true
         var bmm: Bitmap? =null
         var c : Canvas? =null
@@ -113,6 +114,7 @@ class MainActivity : AppCompatActivity() {
                 // Set up the paint with the desired alpha
                 val paint = Paint().apply {
                     this.alpha = (alpha * 255).toInt()  // 50% alpha = 127
+                    alpha -= (startalpha / (skins + 1))
                     isFilterBitmap = true
                 }
 
