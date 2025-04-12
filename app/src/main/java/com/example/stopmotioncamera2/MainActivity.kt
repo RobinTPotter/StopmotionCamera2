@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imageCapture: ImageCapture
     private var savedImages: MutableList<File> = mutableListOf()
     private var dateFolder: File? = null
+    private var outputFolder: File? =null
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +55,12 @@ class MainActivity : AppCompatActivity() {
         captureButton.setOnClickListener {
             takePicture()
         }
+
+//        val encodeButton = findViewById<Button>(R.id.encodeButton)
+//        encodeButton.setOnClickListener{
+//           val vc = VideoCreator()
+//           outputFolder?.let { it1 -> vc.encode(it1) }
+//        }
 
         val overlay = BitmapFactory.decodeResource(resources, R.drawable.overlay_guide)
         onionSkinView.setImageBitmap(overlay)
@@ -171,17 +178,16 @@ class MainActivity : AppCompatActivity() {
         val picturesDir =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
-        val folder = File(picturesDir, "StopMotion/$dateFolder")
+        this.outputFolder = File(picturesDir, "StopMotion/$dateFolder")
 
-        if (!folder.exists()) {
-            folder.mkdirs()
+        if (!outputFolder!!.exists()) {
+            outputFolder!!.mkdirs()
         }
 
         // Find next available number
-        val nextNumber = folder.listFiles()?.size ?: 0
+        val nextNumber = outputFolder!!.listFiles()?.size ?: 0
         val fileName = String.format("%05d.jpg", nextNumber)
-
-        return File(folder, fileName)
+        return File(outputFolder, fileName)
     }
 
 
