@@ -16,10 +16,8 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -126,10 +124,7 @@ class MainActivity : AppCompatActivity() {
                 )
                 .build()
 
-            val preview = Preview.Builder().setResolutionSelector(resolutionSelector).build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
 
             try {
                 cameraProvider.unbindAll()
