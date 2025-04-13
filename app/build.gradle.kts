@@ -36,6 +36,8 @@ android {
 }
 
 dependencies {
+    implementation("androidx.test:monitor:1.7.2")
+    implementation("androidx.test.ext:junit-ktx:1.2.1")
     val camerax_version = "1.4.2"
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.camera:camera-core:$camerax_version")
