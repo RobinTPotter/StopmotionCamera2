@@ -1,0 +1,39 @@
+package com.example.stopmotioncamera2.utils
+
+import android.os.Environment
+import android.util.Log
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+fun createPhotoFile(outputFolder: File?): File {
+    val nextNumber = outputFolder?.listFiles()?.size ?: 0
+    val fileName = String.format("%05d.jpg", nextNumber)
+    return File(outputFolder, fileName)
+}
+
+fun setupOutputFolder(savedImages: MutableList<File>): File {
+    val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+    val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
+    val outputFolder = File(picturesDir, "StopMotion/$dateFolder")
+
+    if (!outputFolder.exists()) {
+        outputFolder.mkdirs()
+        savedImages.clear()
+    } else {
+        var count = 0
+        outputFolder.listFiles()?.forEach {
+            val expectedName = String.format("%05d.jpg", count)
+            if (it.name != expectedName) {
+                val renamed = it.renameTo(File(outputFolder, expectedName))
+                Log.i("GetNewName", "Renamed ${it.name} -> $expectedName ($renamed)")
+            }
+            count++
+        }
+//        outputFolder.listFiles()?.forEach {
+//           savedImages.add(File(it.name))
+//        }
+    }
+    return outputFolder
+}

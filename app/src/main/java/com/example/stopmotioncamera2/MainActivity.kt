@@ -1,14 +1,9 @@
 package com.example.stopmotioncamera2
 
 import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.util.Size
 import android.view.WindowInsetsController
@@ -30,10 +25,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.stopmotioncamera2.utils.createPhotoFile
+import com.example.stopmotioncamera2.utils.hasCameraPermission
+import com.example.stopmotioncamera2.utils.setupOutputFolder
+import com.example.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
@@ -58,16 +54,10 @@ class MainActivity : AppCompatActivity() {
             takePicture()
         }
 
-//        val encodeButton = findViewById<Button>(R.id.encodeButton)
-//        encodeButton.setOnClickListener{
-//           val vc = VideoCreator()
-//           outputFolder?.let { it1 -> vc.encode(it1) }
-//        }
-
         val overlay = BitmapFactory.decodeResource(resources, R.drawable.overlay_guide)
         onionSkinView.setImageBitmap(overlay)
 
-        if (allPermissionsGranted()) {
+        if (hasCameraPermission(this)) {
             startCamera()
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
@@ -75,7 +65,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture() {
-        val photoFile = createPhotoFile()
+        val outputFolder: File = setupOutputFolder(savedImages)
+        val photoFile = createPhotoFile(outputFolder)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
             outputOptions,
@@ -85,7 +76,7 @@ class MainActivity : AppCompatActivity() {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     // Optional: update your onion skin list here
                     savedImages.add(photoFile)
-                    updateOnionSkins()
+                    onionSkinView.setImageBitmap(updateOnionSkins(savedImages))
                 }
 
                 override fun onError(exc: ImageCaptureException) {
@@ -93,48 +84,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
-    }
-
-    private fun updateOnionSkins() {
-        val skins =1
-        val startalpha = 0.6f
-        var  alpha =startalpha
-        var first = true
-        var bmm: Bitmap? =null
-        var c : Canvas? =null
-        var resultBitmap : Bitmap? =null
-        for (si in savedImages.size-skins-1 until(savedImages.size)) {
-            if (si<0) continue
-            val bm = BitmapFactory.decodeFile(savedImages[si].absolutePath)
-            if (first) {
-                resultBitmap = bm.copy(Bitmap.Config.ARGB_8888, true)
-                c = Canvas(resultBitmap)
-                first = false
-            } else {
-                // Set up the paint with the desired alpha
-                val paint = Paint().apply {
-                    this.alpha = (alpha * 255).toInt()  // 50% alpha = 127
-                    alpha -= (startalpha / (skins + 1))
-                    isFilterBitmap = true
-                }
-
-                // Draw the overlay bitmap on top of the base bitmap
-                c?.drawBitmap(bm, 0f, 0f, paint)
-
-            }
-
-        }
-        onionSkinView.setImageBitmap(resultBitmap)
-
-
-
-//
-//
-//
-//        val lastImage = savedImages.lastOrNull() ?: return
-//        val bitmap = BitmapFactory.decodeFile(lastImage.absolutePath)
-//        Log.i("CameraX", lastImage.absolutePath)
-//        onionSkinView.setImageBitmap(bitmap)
     }
 
     @OptIn(ExperimentalCamera2Interop::class)
@@ -173,11 +122,6 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun allPermissionsGranted(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
-            ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-        }
-    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -186,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
+            if (hasCameraPermission(this)) {
                 startCamera()
             } else {
                 finish()
@@ -194,30 +138,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createPhotoFile(): File {
-        val picturesDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
-        this.outputFolder = File(picturesDir, "StopMotion/$dateFolder")
-
-        if (!outputFolder!!.exists()) {
-            outputFolder!!.mkdirs()
-        } else {
-            var count = 0
-            this.outputFolder!!.listFiles()?.forEach {
-                if (String.format("%05d.jpg", count) != it.name) {
-                    val res = it.renameTo(File(String.format("%s/%05d.jpg", outputFolder, count)))
-                    Log.i("GetNewName", "renaming %s %s".format(it, res))
-                }
-                count++
-            }
-        }
-
-        // Find next available number
-        val nextNumber = outputFolder!!.listFiles()?.size ?: 0
-        val fileName = String.format("%05d.jpg", nextNumber)
-        return File(outputFolder, fileName)
-    }
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
