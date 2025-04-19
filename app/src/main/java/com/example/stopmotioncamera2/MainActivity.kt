@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Failed to save photo: ${exc.message}", exc)
   
-                    val lines = exc.stackTraceToString().chunked(60)
+                    val lines = exc.stackTraceToString().chunked(50)
 lines.forEach { msg ->
     Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
 }
