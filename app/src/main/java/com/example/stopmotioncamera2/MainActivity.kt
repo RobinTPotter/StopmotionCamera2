@@ -9,6 +9,7 @@ import android.util.Size
 import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +28,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.stopmotioncamera2.utils.createPhotoFile
 import com.example.stopmotioncamera2.utils.hasCameraPermission
+import com.example.stopmotioncamera2.utils.moveToPublicFolder
 import com.example.stopmotioncamera2.utils.setupOutputFolder
 import com.example.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
@@ -37,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imageCapture: ImageCapture
     private var savedImages: MutableList<File> = mutableListOf()
     private var currentScene: Int = 0
-    private var outputFolder: File? = null
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,13 +61,13 @@ class MainActivity : AppCompatActivity() {
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
-            // currentScene++
+            currentScene += 1
         }
 
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
-            //    if (currentScene>0) currentScene--
+            if (currentScene > 0) currentScene -= 1
 
         }
 
@@ -82,9 +83,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture() {
-        val outputFolder: File = setupOutputFolder(currentScene, savedImages)
+        val outputFolder: File = setupOutputFolder(this, currentScene, savedImages)
         val photoFile = createPhotoFile(outputFolder)
-        Log.i("Main" ,"saving picture maybe to $photoFile")
+        Log.i("Main", "saving picture maybe to $photoFile")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture.takePicture(
@@ -94,13 +95,21 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     // Optional: update your onion skin list here
-                    savedImages.add(photoFile)
+
+                    val output = moveToPublicFolder(this@MainActivity, photoFile)
+
+                    if (output != null) {
+                        savedImages.add(output)
+                    }
                     onionSkinView.setImageBitmap(updateOnionSkins(savedImages))
+                    Log.i("CameraX", "saved image if you're lucky to $photoFile")
+                    Toast.makeText(this@MainActivity, photoFile.absolutePath, Toast.LENGTH_SHORT)
+                        .show()
+
                 }
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Failed to save photo: ${exc.message}", exc)
-
 
 
                 }
