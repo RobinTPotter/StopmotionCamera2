@@ -1,5 +1,6 @@
 package com.example.stopmotioncamera2
 
+import android.widget.Toast
 import android.Manifest
 import android.graphics.BitmapFactory
 import android.os.Build
