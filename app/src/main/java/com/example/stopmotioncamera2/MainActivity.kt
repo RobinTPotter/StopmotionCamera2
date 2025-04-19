@@ -96,11 +96,11 @@ class MainActivity : AppCompatActivity() {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     // Optional: update your onion skin list here
 
-                    val output = moveToPublicFolder(this@MainActivity, photoFile)
+                    //val output = moveToPublicFolder(this@MainActivity, photoFile)
 
-                    if (output != null) {
-                        savedImages.add(output)
-                    }
+                  //  if (output != null) {
+                        savedImages.add(photoFile)
+                   // }
                     onionSkinView.setImageBitmap(updateOnionSkins(savedImages))
                     Log.i("CameraX", "saved image if you're lucky to $photoFile")
                     Toast.makeText(this@MainActivity, photoFile.absolutePath, Toast.LENGTH_SHORT)
