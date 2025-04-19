@@ -16,7 +16,7 @@ fun createPhotoFile(outputFolder: File?): File {
 fun setupOutputFolder(scene: Int, savedImages: MutableList<File>): File {
     val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
     val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
-    val sceneFolder = String.format("%0d", scene)
+    val sceneFolder = String.format("%03d", scene)
     val outputFolder = File(picturesDir, "StopMotion/$dateFolder-$sceneFolder")
 
     if (!outputFolder.exists()) {
