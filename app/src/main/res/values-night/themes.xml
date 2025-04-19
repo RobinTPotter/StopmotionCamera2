@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.StopmotionCamera2" parent="ThemeOverlay.AppCompat.Dark">
+    </style>
+</resources>
