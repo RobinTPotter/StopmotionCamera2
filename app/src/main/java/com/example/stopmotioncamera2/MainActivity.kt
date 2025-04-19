@@ -1,6 +1,5 @@
 package com.example.stopmotioncamera2
 
-import android.widget.Toast
 import android.Manifest
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -37,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
     private var savedImages: MutableList<File> = mutableListOf()
-    private var currentScene: Int=0
+    private var currentScene: Int = 0
     private var outputFolder: File? = null
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -53,7 +52,6 @@ class MainActivity : AppCompatActivity() {
         onionSkinView = findViewById(R.id.onionSkinView)
 
 
-
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
@@ -62,16 +60,15 @@ class MainActivity : AppCompatActivity() {
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
-          // currentScene++
+            // currentScene++
         }
 
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
-        //    if (currentScene>0) currentScene--
+            //    if (currentScene>0) currentScene--
 
         }
-
 
 
         val overlay = BitmapFactory.decodeResource(resources, R.drawable.overlay_guide)
@@ -87,7 +84,9 @@ class MainActivity : AppCompatActivity() {
     private fun takePicture() {
         val outputFolder: File = setupOutputFolder(currentScene, savedImages)
         val photoFile = createPhotoFile(outputFolder)
+        Log.i("Main" ,"saving picture maybe to $photoFile")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -101,14 +100,9 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Failed to save photo: ${exc.message}", exc)
-  
-                    val lines = exc.stackTraceToString().chunked(50)
-lines.forEach { msg ->
-    Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
-}
-                    
- 
-                    
+
+
+
                 }
             }
         )

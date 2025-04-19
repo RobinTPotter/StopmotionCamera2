@@ -14,8 +14,6 @@ fun updateOnionSkins(savedImages: MutableList<File>): Bitmap {
     val skins = 2
     val startalpha = 0.6f
     var alpha = startalpha
-    var first = true
-    var bmm: Bitmap? = null
     var resultBitmap: Bitmap = Bitmap.createBitmap( 1920,1080,Bitmap.Config.ARGB_8888   )
 
     val c: Canvas =  Canvas(resultBitmap)

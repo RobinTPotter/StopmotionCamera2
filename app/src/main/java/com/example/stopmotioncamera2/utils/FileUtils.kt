@@ -10,6 +10,7 @@ import java.util.Locale
 fun createPhotoFile(outputFolder: File?): File {
     val nextNumber = outputFolder?.listFiles()?.size ?: 0
     val fileName = String.format("%05d.jpg", nextNumber)
+    Log.i("File", "going to try and make filename $fileName")
     return File(outputFolder, fileName)
 }
 
@@ -36,5 +37,7 @@ fun setupOutputFolder(scene: Int, savedImages: MutableList<File>): File {
 //           savedImages.add(File(it.name))
 //        }
     }
+
+    Log.i("FileUtils", "using directory $outputFolder")
     return outputFolder
 }
