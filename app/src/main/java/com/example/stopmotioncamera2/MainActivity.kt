@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
     private var savedImages: MutableList<File> = mutableListOf()
+    private var currentScene: Int=0
     private var outputFolder: File? = null
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -49,10 +50,28 @@ class MainActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.previewView)
         onionSkinView = findViewById(R.id.onionSkinView)
+
+
+
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
         }
+
+
+        val upSceneButton = findViewById<Button>(R.id.upFolder)
+        upSceneButton.setOnClickListener {
+           currentScene++
+        }
+
+
+        val downSceneButton = findViewById<Button>(R.id.downFolder)
+        downSceneButton.setOnClickListener {
+            if (currentScene>0) currentScene--
+
+        }
+
+
 
         val overlay = BitmapFactory.decodeResource(resources, R.drawable.overlay_guide)
         onionSkinView.setImageBitmap(overlay)
@@ -65,7 +84,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture() {
-        val outputFolder: File = setupOutputFolder(savedImages)
+        val outputFolder: File = setupOutputFolder(currentScene, savedImages)
         val photoFile = createPhotoFile(outputFolder)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
