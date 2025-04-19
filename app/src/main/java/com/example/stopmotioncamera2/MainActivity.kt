@@ -62,13 +62,13 @@ class MainActivity : AppCompatActivity() {
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
-           currentScene++
+          // currentScene++
         }
 
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
-            if (currentScene>0) currentScene--
+        //    if (currentScene>0) currentScene--
 
         }
 
