@@ -36,8 +36,8 @@ jobs:
           git config user.email "github-actions@github.com"
           git fetch --tags
           TAG="v1.0.${{ github.run_number }}"
-          git tag "$TAG"
-          git push origin "$TAG"
+          # git tag "$TAG"
+          # git push origin "$TAG"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
