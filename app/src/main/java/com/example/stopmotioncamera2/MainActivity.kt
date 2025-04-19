@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Failed to save photo: ${exc.message}", exc)
     val msg = exc.stackTraceToString().take(200) // limit to 200 chars
-    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
 
                     
                 }
