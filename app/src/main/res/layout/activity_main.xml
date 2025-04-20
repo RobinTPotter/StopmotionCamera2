@@ -30,42 +30,45 @@
         android:id="@+id/gridLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:rowCount="4"
         android:columnCount="6"
-        android:alignmentMode="alignMargins"
-        android:useDefaultMargins="true"
-        android:layout_gravity="center">
+        android:rowCount="4"
+        android:useDefaultMargins="true">
 
         <Button
             android:id="@+id/captureButton"
-            android:layout_row="0" android:layout_column="0"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:background="#88FFFFFF"
             android:text="@string/capture_frame" />
 
         <Button
+            android:id="@+id/previewFolder"
+            android:layout_row="0"
+            android:layout_column="5"
+            android:background="#88FFFFFF"
+            android:text="Preview Scene" />
+
+        <Button
             android:id="@+id/upFolder"
-            android:layout_row="2" android:layout_column="5"
+            android:layout_row="1"
+            android:layout_column="5"
+            android:background="#88FFFFFF"
             android:text="Up Scene" />
 
         <Button
             android:id="@+id/downFolder"
-            android:layout_row="3" android:layout_column="5"
+            android:layout_row="2"
+            android:layout_column="5"
+            android:background="#88FFFFFF"
             android:text="Down Scene" />
-
-        <Button
-            android:id="@+id/previewFolder"
-            android:layout_row="0" android:layout_column="5"
-            android:text="Preview Scene" />
 
         <TextView
             android:id="@+id/label"
-            android:layout_row="3" android:layout_column="0"
-            android:text=""
-            android:background="@color/white"
+            android:layout_columnSpan="6"
+            android:layout_row="3"
+            android:background="#88FFFFFF"
             android:textColor="@color/black" />
-
-
     </GridLayout>
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

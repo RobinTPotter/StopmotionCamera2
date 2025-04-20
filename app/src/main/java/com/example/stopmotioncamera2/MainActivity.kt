@@ -29,7 +29,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.stopmotioncamera2.utils.createPhotoFile
 import com.example.stopmotioncamera2.utils.hasCameraPermission
-import com.example.stopmotioncamera2.utils.moveToPublicFolder
 import com.example.stopmotioncamera2.utils.setupOutputFolder
 import com.example.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
@@ -38,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
+    private  lateinit var label: TextView
     private var savedImages: MutableList<File> = mutableListOf()
     private var currentScene: Int = 0
 
@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.previewView)
         onionSkinView = findViewById(R.id.onionSkinView)
-        val label = findViewById<TextView>(R.id.label)
+        label = findViewById<TextView>(R.id.label)
 
 
         val captureButton = findViewById<Button>(R.id.captureButton)
@@ -106,6 +106,7 @@ class MainActivity : AppCompatActivity() {
                   //  if (output != null) {
                         savedImages.add(photoFile)
                    // }
+                    label.text = photoFile.absolutePath
                     onionSkinView.setImageBitmap(updateOnionSkins(savedImages))
                     Log.i("CameraX", "saved image if you're lucky to $photoFile")
                     Toast.makeText(this@MainActivity, photoFile.absolutePath, Toast.LENGTH_SHORT)

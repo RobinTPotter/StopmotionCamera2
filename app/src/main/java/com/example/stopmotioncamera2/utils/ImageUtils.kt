@@ -16,7 +16,7 @@ import java.io.File
 
 
 fun updateOnionSkins(savedImages: MutableList<File>): Bitmap {
-    val skins = 2
+    val skins = 3
     val startalpha = 0.6f
     var alpha = startalpha
     var resultBitmap: Bitmap = Bitmap.createBitmap( 1920,1080,Bitmap.Config.ARGB_8888   )
