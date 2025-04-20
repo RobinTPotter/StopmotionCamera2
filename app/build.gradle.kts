@@ -45,6 +45,6 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
-    implementation ("org.jcodec:jcodec:0.2.3")
-    implementation ("org.jcodec:jcodec-android:0.2.3")
+  //  implementation ("org.jcodec:jcodec:0.2.3")
+//    implementation ("org.jcodec:jcodec-android:0.2.3")
 }
