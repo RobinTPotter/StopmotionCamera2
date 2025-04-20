@@ -9,6 +9,7 @@ import android.util.Size
 import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -51,24 +52,28 @@ class MainActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.previewView)
         onionSkinView = findViewById(R.id.onionSkinView)
+        val label = findViewById<TextView>(R.id.label)
 
 
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
+            label.text="!"
         }
 
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
             currentScene += 1
+            label.text=String.format("%d",currentScene)
+
         }
 
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
             if (currentScene > 0) currentScene -= 1
-
+            label.text=String.format("%d",currentScene)
         }
 
 
