@@ -4,6 +4,7 @@ import android.Manifest
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.util.Size
 import android.view.WindowInsetsController
@@ -27,9 +28,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.stopmotioncamera2.utils.createPhotoFile
 import com.example.stopmotioncamera2.utils.hasCameraPermission
-import com.example.stopmotioncamera2.utils.setupOutputFolder
+import com.example.stopmotioncamera2.utils.nextFile
+import com.example.stopmotioncamera2.utils.outputFolder
+import com.example.stopmotioncamera2.utils.renameImagesInMediaStore
+import com.example.stopmotioncamera2.utils.saveImageToPublicPictures
 import com.example.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
 
@@ -37,7 +40,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
-    private  lateinit var label: TextView
+    private lateinit var label: TextView
     private var savedImages: MutableList<File> = mutableListOf()
     private var currentScene: Int = 0
 
@@ -58,14 +61,14 @@ class MainActivity : AppCompatActivity() {
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
-            label.text="!"
+            label.text = "!"
         }
 
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
             currentScene += 1
-            label.text=String.format("%d",currentScene)
+            label.text = String.format("%d", currentScene)
 
         }
 
@@ -73,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
             if (currentScene > 0) currentScene -= 1
-            label.text=String.format("%d",currentScene)
+            label.text = String.format("%d", currentScene)
         }
 
 
@@ -88,9 +91,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePicture() {
-        val outputFolder: File = setupOutputFolder(this, currentScene, savedImages)
-        val photoFile = createPhotoFile(outputFolder)
-        Log.i("Main", "saving picture maybe to $photoFile")
+//        val outputFolder: File = setupOutputFolder(this, currentScene, savedImages)
+//        val photoFile =  createPhotoFile(outputFolder)
+//        Log.i("Main", "saving picture maybe to $photoFile")
+        val photoFile = File(this.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "temp.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture.takePicture(
@@ -99,17 +103,19 @@ class MainActivity : AppCompatActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
-                    // Optional: update your onion skin list here
+                    val temp = BitmapFactory.decodeFile(photoFile.absolutePath)
 
-                    //val output = moveToPublicFolder(this@MainActivity, photoFile)
-
-                  //  if (output != null) {
-                        savedImages.add(photoFile)
-                   // }
+                    val sub = outputFolder(currentScene)
+                    renameImagesInMediaStore(this@MainActivity,sub )
+                    
+                    val next = nextFile( this@MainActivity, sub)
+                    val uri = saveImageToPublicPictures(
+                        this@MainActivity,temp,sub,next)
+                    savedImages.add(photoFile)
                     label.text = photoFile.absolutePath
                     onionSkinView.setImageBitmap(updateOnionSkins(savedImages))
                     Log.i("CameraX", "saved image if you're lucky to $photoFile")
-                    Toast.makeText(this@MainActivity, photoFile.absolutePath, Toast.LENGTH_SHORT)
+                    Toast.makeText(this@MainActivity, uri.toString(), Toast.LENGTH_SHORT)
                         .show()
 
                 }

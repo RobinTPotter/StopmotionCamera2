@@ -1,5 +1,6 @@
 package com.example.stopmotioncamera2.utils
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -22,11 +23,20 @@ fun createPhotoFile(outputFolder: File?): File {
     return File(outputFolder, fileName)
 }
 
-fun setupOutputFolder(context: Context, scene: Int, savedImages: MutableList<File>): File {
-    val picturesDir  = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+fun nextFile(context: Context , outputFolder: String): String {
+    val nextNumber = countImagesInFolder(context, outputFolder)
+    return String.format("%05d.jpg", nextNumber)
+}
+
+fun outputFolder(scene: Int): String {
     val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
     val sceneFolder = String.format("%03d", scene)
-    val subfolder = "StopMotion/$dateFolder-$sceneFolder"
+    return "StopMotion/$dateFolder-$sceneFolder"
+}
+
+fun setupOutputFolder(context: Context, scene: Int, savedImages: MutableList<File>): File {
+    val picturesDir  = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val subfolder = outputFolder(scene)
     val outputFolder = File(picturesDir, subfolder)
 
     if (!outputFolder.exists()) {
@@ -63,7 +73,7 @@ fun saveImageToPublicPictures(
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            "${Environment.DIRECTORY_PICTURES}/StopMotion/$subfolder"
+            "${Environment.DIRECTORY_PICTURES}/$subfolder"
         )
         put(MediaStore.Images.Media.IS_PENDING, 1)
     }
@@ -164,5 +174,87 @@ fun moveToPublicFolder(context: Context, sourceFile: File): File? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+
+fun saveBitmapToGallery(context: Context, bitmap: Bitmap, folderName: String?, fileName: String?) {
+    val values = ContentValues()
+    values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+    values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg") // or "image/png"
+    values.put(
+        MediaStore.Images.Media.RELATIVE_PATH,
+        Environment.DIRECTORY_PICTURES + "/$folderName"
+    )
+    val resolver = context.contentResolver
+    val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+    if (imageUri != null) {
+        try {
+            resolver.openOutputStream(imageUri).use { out ->
+                bitmap.compress(
+                    Bitmap.CompressFormat.JPEG, 100,
+                    out!!
+                )
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            resolver.delete(imageUri, null, null) // Clean up if something went wrong
+        }
+    }
+}
+
+
+fun countImagesInFolder(context: Context, folderName: String): Int {
+    val projection = arrayOf(MediaStore.Images.Media._ID)
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selectionArgs = arrayOf("%Pictures/$folderName/%")
+
+    val cursor = context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        null
+    )
+
+    val count = cursor?.count ?: 0
+    cursor?.close()
+    return count
+}
+
+
+fun renameImagesInMediaStore(context: Context, folderName: String) {
+    val contentResolver = context.contentResolver
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DISPLAY_NAME
+    )
+
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selectionArgs = arrayOf("%Pictures/$folderName/%")
+
+    val cursor = contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        MediaStore.Images.Media.DATE_ADDED + " ASC" // Optional: sort oldest to newest
+    )
+
+    cursor?.use {
+        var count = 0
+        while (it.moveToNext()) {
+            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+
+            val newName = String.format("%05d.jpg", count)
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
+            }
+
+            val rows = contentResolver.update(uri, values, null, null)
+            Log.i("Rename", "Updated to $newName ($rows row(s))")
+            count++
+        }
     }
 }
