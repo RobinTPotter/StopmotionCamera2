@@ -117,6 +117,7 @@ class MainActivity : AppCompatActivity() {
                     val temp = BitmapFactory.decodeFile(photoFile.absolutePath)
 
                     val sub = outputFolder(currentScene)
+                    renameImagesInMediaStore(this@MainActivity, sub, "temp_")
                     renameImagesInMediaStore(this@MainActivity, sub)
 
                     val next = nextFile(this@MainActivity, sub)

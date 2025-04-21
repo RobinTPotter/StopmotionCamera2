@@ -114,7 +114,7 @@ fun getLastImagesByName(context: Context, folderName: String, numImages: Int): M
     return imageUris
 }
 
-fun renameImagesInMediaStore(context: Context, folderName: String) {
+fun newrenameImagesInMediaStore(context: Context, folderName: String) {
     val contentResolver = context.contentResolver
     val projection = arrayOf(
         MediaStore.Images.Media._ID,
@@ -166,7 +166,7 @@ fun renameImagesInMediaStore(context: Context, folderName: String) {
 }
 
 
-fun oldrenameImagesInMediaStore(context: Context, folderName: String) {
+fun renameImagesInMediaStore(context: Context, folderName: String, prefix: String="") {
     val contentResolver = context.contentResolver
     val projection = arrayOf(
         MediaStore.Images.Media._ID,
@@ -192,7 +192,7 @@ fun oldrenameImagesInMediaStore(context: Context, folderName: String) {
 
             val newName = String.format("%05d.jpg", count)
             val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
+                put(MediaStore.Images.Media.DISPLAY_NAME, prefix + newName)
             }
 
             val rows = contentResolver.update(uri, values, null, null)
