@@ -114,8 +114,59 @@ fun getLastImagesByName(context: Context, folderName: String, numImages: Int): M
     return imageUris
 }
 
-
 fun renameImagesInMediaStore(context: Context, folderName: String) {
+    val contentResolver = context.contentResolver
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DISPLAY_NAME
+    )
+
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selectionArgs = arrayOf("%Pictures/$folderName/%")
+
+    val cursor = contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        MediaStore.Images.Media.DISPLAY_NAME + " ASC"
+    )
+
+    cursor?.use {
+        var count = 0
+        while (it.moveToNext()) {
+            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            val originalUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+            val newName = String.format("%05d.jpg", count)
+
+            // Copy the original file to a new file with the new name
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$folderName")
+            }
+
+            val newUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            if (newUri != null) {
+                context.contentResolver.openInputStream(originalUri)?.use { inputStream ->
+                    context.contentResolver.openOutputStream(newUri)?.use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                // Delete the original
+                contentResolver.delete(originalUri, null, null)
+                Log.i("Rename", "Renamed to $newName")
+            } else {
+                Log.w("Rename", "Failed to create new file for $newName")
+            }
+            count++
+        }
+    }
+}
+
+
+fun oldrenameImagesInMediaStore(context: Context, folderName: String) {
     val contentResolver = context.contentResolver
     val projection = arrayOf(
         MediaStore.Images.Media._ID,
