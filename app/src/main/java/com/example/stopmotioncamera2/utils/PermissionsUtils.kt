@@ -11,3 +11,5 @@ fun hasCameraPermission(context: Context): Boolean {
     ) == PackageManager.PERMISSION_GRANTED
 }
 
+
+

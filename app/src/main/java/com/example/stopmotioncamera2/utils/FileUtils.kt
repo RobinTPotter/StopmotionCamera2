@@ -114,7 +114,7 @@ fun getLastImagesByName(context: Context, folderName: String, numImages: Int): M
     return imageUris
 }
 
-fun newrenameImagesInMediaStore(context: Context, folderName: String) {
+fun renameImagesInMediaStore(context: Context, folderName: String, prefix: String = "") {
     val contentResolver = context.contentResolver
     val projection = arrayOf(
         MediaStore.Images.Media._ID,
@@ -136,8 +136,9 @@ fun newrenameImagesInMediaStore(context: Context, folderName: String) {
         var count = 0
         while (it.moveToNext()) {
             val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-            val originalUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-            val newName = String.format("%05d.jpg", count)
+            val originalUri =
+                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+            val newName = String.format("$prefix%05d.jpg", count)
 
             // Copy the original file to a new file with the new name
             val values = ContentValues().apply {
@@ -146,7 +147,8 @@ fun newrenameImagesInMediaStore(context: Context, folderName: String) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$folderName")
             }
 
-            val newUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            val newUri =
+                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
             if (newUri != null) {
                 context.contentResolver.openInputStream(originalUri)?.use { inputStream ->
                     context.contentResolver.openOutputStream(newUri)?.use { outputStream ->
@@ -166,7 +168,7 @@ fun newrenameImagesInMediaStore(context: Context, folderName: String) {
 }
 
 
-fun renameImagesInMediaStore(context: Context, folderName: String, prefix: String="") {
+fun oldrenameImagesInMediaStore(context: Context, folderName: String, prefix: String = "") {
     val contentResolver = context.contentResolver
     val projection = arrayOf(
         MediaStore.Images.Media._ID,
@@ -190,14 +192,20 @@ fun renameImagesInMediaStore(context: Context, folderName: String, prefix: Strin
             val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
             val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
 
-            val newName = String.format("%05d.jpg", count)
+            val newName = String.format("$prefix%05d.jpg", count)
             val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, prefix + newName)
+                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
             }
 
             val rows = contentResolver.update(uri, values, null, null)
             Log.i("Rename", "Updated to $newName ($rows row(s))")
             count++
+
+
+            val test = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+
+
+            Log.i("Rename", "title is $test")
         }
     }
 
