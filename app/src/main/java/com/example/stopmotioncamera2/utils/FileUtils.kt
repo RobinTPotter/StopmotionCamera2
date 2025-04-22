@@ -65,7 +65,7 @@ fun saveImageToPublicPictures(
 
 fun countImagesInFolder(context: Context, folderName: String): Int {
     val projection = arrayOf(MediaStore.Images.Media._ID)
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH}=?"
     val selectionArgs = arrayOf("%Pictures/$folderName/%")
 
     val cursor = context.contentResolver.query(
@@ -88,7 +88,7 @@ fun getLastImagesByName(context: Context, folderName: String, numImages: Int): M
         MediaStore.Images.Media.DISPLAY_NAME
     )
 
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH}=?"
     val selectionArgs = arrayOf("%Pictures/$folderName/%")
     val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} DESC"
     val imageUris = mutableListOf<Uri?>()
@@ -121,7 +121,7 @@ fun renameImagesInMediaStore(context: Context, folderName: String, prefix: Strin
         MediaStore.Images.Media.DISPLAY_NAME
     )
 
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH}=?"
     val selectionArgs = arrayOf("%Pictures/$folderName/%")
 
     val cursor = contentResolver.query(
