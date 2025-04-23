@@ -1,4 +1,4 @@
-package com.example.stopmotioncamera2.utils
+package com.robin.stopmotioncamera2.utils
 
 import android.content.Context
 import android.content.pm.PackageManager
