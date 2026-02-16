@@ -6,3 +6,4 @@
 
 ![Build Status](https://github.com/RobinTPotter/StopmotionCamera2/actions/workflows/android.yml/badge.svg)
 
+Revenge of the Stopmotion Camera
