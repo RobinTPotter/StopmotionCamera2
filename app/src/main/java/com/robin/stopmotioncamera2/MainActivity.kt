@@ -43,6 +43,10 @@ import com.robin.stopmotioncamera2.utils.outputFolder
 import com.robin.stopmotioncamera2.utils.saveImageToPublicPictures
 import com.robin.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
@@ -102,6 +106,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
+        
+        // Initialize onion skins for the default scene
+        updateSavedImages()
     }
 
     private fun updateSavedImages() {
@@ -114,7 +121,6 @@ class MainActivity : AppCompatActivity() {
             Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
         }
         onionSkinView.setImageBitmap(resultBitmap)
-
     }
 
     private fun takePicture() {
@@ -129,51 +135,46 @@ class MainActivity : AppCompatActivity() {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     val temp = BitmapFactory.decodeFile(photoFile.absolutePath)
 
-                    val sub = outputFolder(currentScene, false)
+                    // Use the same subfolder path consistently
+                    val sub = outputFolder(currentScene)
 
-//                    MediaScannerConnection.scanFile(
-//                        this@MainActivity,
-//                        arrayOf(File(Environment.getExternalStorageDirectory(), "Pictures/$sub").toString()),
-//                        null, //arrayOf("image/jpeg"), // or null for all types
-//                        null
-//                    )
-                    if (treeUri==null) {
+                    if (treeUri == null) {
                         treeUri = getSavedStopMotionTreeUri(this@MainActivity)
                     }
-                    var subUri =
-                        treeUri?.let { getSubfolderUriFromTreeUri(this@MainActivity, it, sub) }
+                    
+                    val subUri = treeUri?.let { getSubfolderUriFromTreeUri(this@MainActivity, it, sub) }
 
-                    val thread = Thread() {
-                      //  lifecycleScope.launch {
-                            if (subUri != null) {
-                                renameAllJpgsWithSAF(this@MainActivity, subUri)
+                    // Use coroutine instead of Thread for better async handling
+                    lifecycleScope.launch {
+                        try {
+                            // Rename files on IO thread
+                            withContext(Dispatchers.IO) {
+                                if (subUri != null) {
+                                    renameAllJpgsWithSAF(this@MainActivity, subUri)
+                                }
                             }
-                        Thread.sleep(1000)
-                    //    }
+                            
+                            // After renaming, get the next available file number
+                            // Since we just renumbered, next file should be the count of existing files
+                            val next = nextFile(this@MainActivity, sub)
+                            
+                            // Save the new image
+                            val uri = saveImageToPublicPictures(
+                                this@MainActivity, temp, sub, next
+                            )
+
+                            // Update the saved images list and refresh onion skins
+                            updateSavedImages()
+                            
+                            label.text = "Frame: $next"
+                            Log.i("CameraX", "Saved image to $uri")
+                            Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
+                            
+                        } catch (e: Exception) {
+                            Log.e("CameraX", "Error in save/rename process: ${e.message}", e)
+                            Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    thread.start()
-                    thread.join()
-
-                    val sub2 = outputFolder(currentScene)
-
-
-                    val next = nextFile(this@MainActivity, sub2)
-                    val uri = saveImageToPublicPictures(
-                        this@MainActivity, temp, sub2, next
-                    )
-
-                    savedImages.add(uri)
-                    label.text = photoFile.absolutePath
-                    onionSkinView.setImageBitmap(
-                        updateOnionSkins(
-                            this@MainActivity,
-                            savedImages,
-                            onionSkins
-                        )
-                    )
-                    Log.i("CameraX", "saved image if you're lucky to $photoFile")
-                    Toast.makeText(this@MainActivity, uri.toString(), Toast.LENGTH_SHORT)
-                        .show()
                 }
 
                 override fun onError(exc: ImageCaptureException) {
@@ -237,7 +238,7 @@ class MainActivity : AppCompatActivity() {
 
 
     companion object {
-        private const val REQUEST_TREE = 222     // any number you like
+        private const val REQUEST_TREE = 222
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     }
@@ -250,7 +251,6 @@ class MainActivity : AppCompatActivity() {
         )
         val stopMotionDir = File(pictures, "StopMotion")
 
-        // Convert that real path to a content URI that SAF understands
         val initUri = FileProvider.getUriForFile(
             activity,
             "${activity.packageName}.fileprovider",
@@ -266,7 +266,6 @@ class MainActivity : AppCompatActivity() {
     fun getSubfolderUriFromTreeUri(context: Context, treeUri: Uri, subfolder: String): Uri? {
         val baseDir = DocumentFile.fromTreeUri(context, treeUri) ?: return null
 
-        // Navigate or create the subfolder
         val target = baseDir.findFile(subfolder)
             ?: baseDir.createDirectory(subfolder)
 
@@ -274,21 +273,20 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-     fun renameAllJpgsWithSAF(context: Context, folderUri: Uri)  {
+    fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
+        val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return
+        val jpgs = dir.listFiles()
+            .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
+            .sortedBy { it.name!!.lowercase() }
 
-            val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return
-            val jpgs = dir.listFiles()
-                .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
-                .sortedBy { it.name!!.lowercase() }
-
-            jpgs.forEachIndexed { index, doc ->
-                val newName = "%05d.jpg".format(index)
-                if (doc.name != newName) {
-                    val ok = doc.renameTo(newName)
-                    Log.i("SAFRename", "Renamed ${doc.name} → $newName : $ok")
-                }
+        jpgs.forEachIndexed { index, doc ->
+            val newName = "%05d.jpg".format(index)
+            if (doc.name != newName) {
+                val ok = doc.renameTo(newName)
+                Log.i("SAFRename", "Renamed ${doc.name} → $newName : $ok")
             }
         }
+    }
 
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -299,14 +297,10 @@ class MainActivity : AppCompatActivity() {
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 contentResolver.takePersistableUriPermission(treeUri, flags)
 
-
-                // 2. save it for later
                 getSharedPreferences("saf_prefs", MODE_PRIVATE)
                     .edit()
                     .putString("stopmotion_tree", treeUri.toString())
                     .apply()
-
-
             }
         }
     }
@@ -317,8 +311,4 @@ class MainActivity : AppCompatActivity() {
             .getString("stopmotion_tree", null)
         return uriStr?.let { Uri.parse(it) }
     }
-
-
 }
-
-
