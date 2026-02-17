@@ -11,38 +11,50 @@ import android.util.Log
 
 
 fun updateOnionSkins(context: Context, savedImages: MutableList<Uri?>, skins: Int = 3): Bitmap {
-
-    val startAlpha = 0.6f
-    var alpha = startAlpha
     val resultBitmap: Bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
     val c = Canvas(resultBitmap)
-
+    
     Log.i("ImageUtils", "updateOnionSkins called with ${savedImages.size} images, skins=$skins")
-
+    
+    // savedImages is in DESC order (newest first)
+    // Draw oldest to newest with gentle alpha increase
+    
     try {
-        for (si in savedImages.size - skins - 1 until savedImages.size) {
-            if (si < 0) continue
-
-            val uri = savedImages[si]
-            Log.i("ImageUtils", "Drawing onion skin layer $si with alpha=$alpha, uri=$uri")
-
+        val numToDraw = minOf(savedImages.size, skins)
+        
+        // Gentle gradient: oldest at 0.35, newest at 0.5
+        val minAlpha = 0.35f
+        val maxAlpha = 0.5f
+        
+        for (i in 0 until numToDraw) {
+            // Calculate index in savedImages (newest first list)
+            val imageIndex = numToDraw - 1 - i
+            
+            // Calculate alpha with gentle gradient
+            // For 2 skins: [0.35, 0.5]
+            // For 3 skins: [0.35, 0.425, 0.5]
+            val alphaValue = if (numToDraw == 1) {
+                maxAlpha
+            } else {
+                minAlpha + (maxAlpha - minAlpha) * i / (numToDraw - 1)
+            }
+            
+            val uri = savedImages[imageIndex]
+            Log.i("ImageUtils", "Drawing layer $i: savedImages[$imageIndex] with alpha=$alphaValue (${(alphaValue * 100).toInt()}%), uri=$uri")
+            
             val inputStream = uri?.let { context.contentResolver.openInputStream(it) }
             val bm = BitmapFactory.decodeStream(inputStream)
             inputStream?.close()
-
-            // Set up the paint with the desired alpha
-            val paint = Paint().apply {
-                this.alpha = (alpha * 255).toInt()
-                alpha -= (startAlpha / (skins + 1))
-                isFilterBitmap = true
-            }
             
-            // Draw the overlay bitmap on top of the base bitmap
             if (bm != null) {
+                val paint = Paint().apply {
+                    this.alpha = (alphaValue * 255).toInt()
+                    isFilterBitmap = true
+                }
                 c.drawBitmap(bm, 0f, 0f, paint)
-                Log.i("ImageUtils", "Successfully drew bitmap for layer $si")
+                Log.i("ImageUtils", "Successfully drew bitmap: alpha=${(alphaValue * 255).toInt()}/255")
             } else {
-                Log.w("ImageUtils", "Failed to decode bitmap for layer $si")
+                Log.w("ImageUtils", "Failed to decode bitmap for index $imageIndex")
             }
         }
     } catch (e: Exception) {
