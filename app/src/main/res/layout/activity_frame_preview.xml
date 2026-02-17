@@ -22,10 +22,10 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:background="#222222"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
         android:gravity="center_vertical">
 
         <!-- Frame Counter -->
@@ -37,14 +37,14 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:gravity="center"
-            android:paddingBottom="2dp" />
+            android:paddingBottom="1dp" />
 
         <!-- Seekbar -->
         <SeekBar
             android:id="@+id/frameSeekBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="2dp" />
 
         <!-- Playback Controls + FPS all in one row -->
         <LinearLayout
@@ -59,8 +59,8 @@
                 android:layout_height="32dp"
                 android:text="▶ Play"
                 android:textSize="13sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
 
@@ -70,19 +70,19 @@
                 android:layout_height="32dp"
                 android:text="✕ Close"
                 android:textSize="13sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="4dp" />
 
             <!-- Divider -->
             <View
                 android:layout_width="1dp"
                 android:layout_height="24dp"
                 android:background="#555555"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp" />
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -98,8 +98,8 @@
                 android:layout_height="32dp"
                 android:text="8"
                 android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart=5dp"
+                android:paddingEnd="5dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
 
@@ -109,11 +109,11 @@
                 android:layout_height="32dp"
                 android:text="12"
                 android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:layout_marginStart="4dp" />
+                android:layout_marginStart="2dp" />
 
             <Button
                 android:id="@+id/fps24Button"
@@ -121,8 +121,8 @@
                 android:layout_height="32dp"
                 android:text="24"
                 android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:layout_marginStart="4dp" />
