@@ -22,8 +22,8 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:background="#222222"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
         android:gravity="center_vertical">
