@@ -32,6 +32,16 @@
             </intent-filter>
         </activity>
 
+
+<!-- ADD THIS - No intent filter needed! -->
+        <activity
+            android:name="com.robin.stopmotioncamera2.FramePreviewActivity"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+
+
+
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

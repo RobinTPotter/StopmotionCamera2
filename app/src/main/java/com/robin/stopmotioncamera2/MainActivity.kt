@@ -99,6 +99,17 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
         
+
+        // Add this to your MainActivity.kt onCreate() method:
+
+        val previewButton = findViewById<Button>(R.id.previewButton)
+        previewButton.setOnClickListener {
+            val intent = Intent(this, FramePreviewActivity::class.java)
+            intent.putExtra("SCENE_NUMBER", currentScene)
+            startActivity(intent)
+        }
+
+
         // Initialize onion skins for the default scene
         label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
