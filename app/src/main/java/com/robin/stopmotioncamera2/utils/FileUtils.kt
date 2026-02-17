@@ -18,17 +18,14 @@ import java.util.Locale
 
 
 fun nextFile(context: Context, outputFolder: String): String {
-    val nextNumber = 1 + countImagesInFolder(context, outputFolder)
+    val nextNumber = countImagesInFolder(context, outputFolder)
     return String.format("%05d.jpg", nextNumber)
 }
 
-fun outputFolder(scene: Int, withTitle: Boolean= true): String {
+fun outputFolder(scene: Int): String {
     val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
     val sceneFolder = String.format("%03d", scene)
-    return if (withTitle) "StopMotion/$dateFolder-$sceneFolder"
-    else {
-        "$dateFolder-$sceneFolder"
-    }
+    return "StopMotion/$dateFolder-$sceneFolder"
 }
 
 
@@ -71,19 +68,14 @@ fun saveImageToPublicPictures(
 
 fun countImagesInFolder(context: Context, folderName: String): Int {
     val cursor = getCursor(context, folderName)
-    val list = mutableListOf<String>()
     var count = 0
     cursor?.use {
         while (it.moveToNext()) {
-            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-            val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
-            list.add(name)
             count++
         }
     }
-
-    // val count = cursor?.count ?: 0
     cursor?.close()
+    Log.i("FileUtils", "countImagesInFolder($folderName) = $count")
     return count
 }
 
@@ -94,17 +86,21 @@ fun getCursor(context: Context, folderName: String, dir: String = "ASC"): Cursor
         MediaStore.Images.Media.RELATIVE_PATH
     )
 
+    // FIXED: Actually use the selection to filter by folder
     val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
-    val selectionArgs = arrayOf("%$folderName/%")
+    val selectionArgs = arrayOf("%$folderName%")
     val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} $dir"
 
-    return context.contentResolver.query(
+    val cursor = context.contentResolver.query(
         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         projection,
-       null, // selection,
-        null, //selectionArgs,
+        selection,  // FIXED: Use the selection
+        selectionArgs,  // FIXED: Use the selection args
         sortOrder
     )
+    
+    Log.i("FileUtils", "getCursor($folderName) returned ${cursor?.count ?: 0} results")
+    return cursor
 }
 
 fun getLastImagesByName(context: Context, folderName: String, numImages: Int): MutableList<Uri?> {
@@ -116,60 +112,62 @@ fun getLastImagesByName(context: Context, folderName: String, numImages: Int): M
         var count = 0
         while (it.moveToNext() && count < numImages) {
             val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+            val path = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH))
             val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
             imageUris.add(uri)
+            Log.i("FileUtils", "getLastImagesByName: Added $path$name")
             count++
         }
     }
 
+    Log.i("FileUtils", "getLastImagesByName($folderName, $numImages) returned ${imageUris.size} URIs")
     return imageUris
 }
 
 
 fun renameAllJpgImagesAlphabetically(
     context: Context,
-    folderName: String,
-    suffix: Boolean = false
+    folderName: String
 ) {
-
-
     val fileList = mutableListOf<Triple<Long, String, String>>() // ID, current name, path
     val contentResolver = context.contentResolver
 
     val cursor = getCursor(context, folderName)
 
-    cursor.use {
-        if (it != null) {
-            val idCol = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val nameCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-            val pathCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH)
+    cursor?.use {
+        val idCol = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+        val nameCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+        val pathCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH)
 
-            while (it.moveToNext()) {
-                val id = it.getLong(idCol)
-                val name = it.getString(nameCol)
-                val path = it.getString(pathCol)
-                if (name.lowercase().endsWith(".jpg") && path.contains(folderName)) {
-                    Log.i("Rename", "Found: $path/$name")
-                    fileList.add(Triple(id, name, path))
-                }
+        while (it.moveToNext()) {
+            val id = it.getLong(idCol)
+            val name = it.getString(nameCol)
+            val path = it.getString(pathCol)
+            if (name.lowercase().endsWith(".jpg")) {
+                Log.i("Rename", "Found: $path$name")
+                fileList.add(Triple(id, name, path))
             }
         }
     }
 
     Log.i("Rename", "Found ${fileList.size} .jpg files in $folderName")
 
-    fileList.forEachIndexed { index, (id, oldName, path) ->
-        val ending = if (suffix) System.currentTimeMillis().toString() else ""
+    // Sort by name to ensure consistent ordering
+    val sortedFiles = fileList.sortedBy { it.second.lowercase() }
 
-        val newName = String.format("%05d$ending.jpg", index)
+    sortedFiles.forEachIndexed { index, (id, oldName, path) ->
+        val newName = String.format("%05d.jpg", index)
         val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
 
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, newName)
-        }
+        if (oldName != newName) {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
+            }
 
-        val updated = contentResolver.update(uri, values, null, null)
-        Log.i("Rename", "Renamed $oldName ➝ $newName ($updated row)")
+            val updated = contentResolver.update(uri, values, null, null)
+            Log.i("Rename", "Renamed $oldName ➝ $newName (updated=$updated)")
+        }
     }
 
     Log.i("Rename", "Renaming complete")
@@ -187,8 +185,8 @@ suspend fun listing(
         MediaStore.Images.Media.RELATIVE_PATH
     )
 
-//    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? AND ${MediaStore.Images.Media.MIME_TYPE} = ${MediaStore.Images.Media.MIME_TYPE} OR  ${MediaStore.Images.Media.MIME_TYPE} = ?"
-//    val selectionArgs = arrayOf("Pictures/$folderName/%", "image/jpeg")
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+    val selectionArgs = arrayOf("%$folderName%")
     val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
 
     val fileList = mutableListOf<Triple<Long, String, String>>() // ID, current name, path
@@ -196,8 +194,8 @@ suspend fun listing(
     contentResolver.query(
         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         projection,
-        null, // selection,
-        null, // selectionArgs,
+        selection,
+        selectionArgs,
         sortOrder
     )?.use { cursor ->
         val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
@@ -210,7 +208,7 @@ suspend fun listing(
             val path = cursor.getString(pathCol)
             Log.i("Listing", "Found: $path$name $tick")
             tick++
-            if (name.lowercase().endsWith(".jpg") && path.contains(folderName)) {
+            if (name.lowercase().endsWith(".jpg")) {
                 fileList.add(Triple(id, name, path))
             }
         }
@@ -219,8 +217,6 @@ suspend fun listing(
     Log.i("Listing", "Found ${fileList.size} .jpg files in $folderName")
 
     fileList.forEachIndexed { index, (id, oldName, path) ->
-        Log.i("Listing", "Found $oldName")
+        Log.i("Listing", "[$index] $oldName")
     }
-
 }
-

@@ -40,6 +40,7 @@ import com.robin.stopmotioncamera2.utils.getLastImagesByName
 import com.robin.stopmotioncamera2.utils.hasCameraPermission
 import com.robin.stopmotioncamera2.utils.nextFile
 import com.robin.stopmotioncamera2.utils.outputFolder
+import com.robin.stopmotioncamera2.utils.renameAllJpgImagesAlphabetically
 import com.robin.stopmotioncamera2.utils.saveImageToPublicPictures
 import com.robin.stopmotioncamera2.utils.updateOnionSkins
 import java.io.File
@@ -53,7 +54,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
     private lateinit var label: TextView
-    private var treeUri: Uri? = null
     private var savedImages: MutableList<Uri?> = mutableListOf()
     private var currentScene: Int = 0
     private var onionSkins: Int = 2
@@ -62,13 +62,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        treeUri = getSavedStopMotionTreeUri(this@MainActivity)
-
-        if (treeUri==null) {
-            launchStopMotionPicker(this)
-        }
-
 
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
         window.insetsController?.systemBarsBehavior =
@@ -82,14 +75,13 @@ class MainActivity : AppCompatActivity() {
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
-            label.text = "!"
         }
 
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
             currentScene += 1
-            label.text = String.format("%d", currentScene)
+            label.text = String.format("Scene %d", currentScene)
             updateSavedImages()
         }
 
@@ -97,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
             if (currentScene > 0) currentScene -= 1
-            label.text = String.format("%d", currentScene)
+            label.text = String.format("Scene %d", currentScene)
             updateSavedImages()
         }
 
@@ -108,11 +100,13 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Initialize onion skins for the default scene
+        label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
     }
 
     private fun updateSavedImages() {
         val sub = outputFolder(currentScene)
+        Log.i("MainActivity", "updateSavedImages for folder: $sub")
         savedImages = getLastImagesByName(this@MainActivity, sub, numImages = onionSkins)
 
         val resultBitmap: Bitmap = if (savedImages.size > 0) {
@@ -121,6 +115,7 @@ class MainActivity : AppCompatActivity() {
             Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
         }
         onionSkinView.setImageBitmap(resultBitmap)
+        Log.i("MainActivity", "Onion skin updated with ${savedImages.size} images")
     }
 
     private fun takePicture() {
@@ -135,50 +130,51 @@ class MainActivity : AppCompatActivity() {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     val temp = BitmapFactory.decodeFile(photoFile.absolutePath)
 
-                    // Use the same subfolder path consistently
+                    // Use consistent folder path
                     val sub = outputFolder(currentScene)
+                    Log.i("MainActivity", "Taking picture for folder: $sub")
 
-                    if (treeUri == null) {
-                        treeUri = getSavedStopMotionTreeUri(this@MainActivity)
-                    }
-                    
-                    val subUri = treeUri?.let { getSubfolderUriFromTreeUri(this@MainActivity, it, sub) }
-
-                    // Use coroutine instead of Thread for better async handling
+                    // Use coroutine for async operations
                     lifecycleScope.launch {
                         try {
-                            // Rename files on IO thread
+                            // Rename existing files on IO thread
                             withContext(Dispatchers.IO) {
-                                if (subUri != null) {
-                                    renameAllJpgsWithSAF(this@MainActivity, subUri)
-                                }
+                                Log.i("MainActivity", "Renaming files in $sub")
+                                renameAllJpgImagesAlphabetically(this@MainActivity, sub)
                             }
                             
                             // After renaming, get the next available file number
-                            // Since we just renumbered, next file should be the count of existing files
                             val next = nextFile(this@MainActivity, sub)
+                            Log.i("MainActivity", "Next file will be: $next")
                             
                             // Save the new image
                             val uri = saveImageToPublicPictures(
                                 this@MainActivity, temp, sub, next
                             )
 
-                            // Update the saved images list and refresh onion skins
-                            updateSavedImages()
-                            
-                            label.text = "Frame: $next"
-                            Log.i("CameraX", "Saved image to $uri")
-                            Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
+                            if (uri != null) {
+                                Log.i("MainActivity", "Saved new image: $uri")
+                                
+                                // Update the saved images list and refresh onion skins
+                                updateSavedImages()
+                                
+                                label.text = "Frame: $next"
+                                Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Log.e("MainActivity", "Failed to save image")
+                                Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
+                            }
                             
                         } catch (e: Exception) {
-                            Log.e("CameraX", "Error in save/rename process: ${e.message}", e)
-                            Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
+                            Log.e("MainActivity", "Error in save/rename process: ${e.message}", e)
+                            Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Failed to save photo: ${exc.message}", exc)
+                    Toast.makeText(this@MainActivity, "Camera error: ${exc.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         )
@@ -238,77 +234,7 @@ class MainActivity : AppCompatActivity() {
 
 
     companion object {
-        private const val REQUEST_TREE = 222
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
-    }
-
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun launchStopMotionPicker(activity: Activity) {
-        val pictures = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES
-        )
-        val stopMotionDir = File(pictures, "StopMotion")
-
-        val initUri = FileProvider.getUriForFile(
-            activity,
-            "${activity.packageName}.fileprovider",
-            stopMotionDir
-        )
-
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            putExtra(DocumentsContract.EXTRA_INITIAL_URI, initUri)
-        }
-        activity.startActivityForResult(intent, REQUEST_TREE)
-    }
-
-    fun getSubfolderUriFromTreeUri(context: Context, treeUri: Uri, subfolder: String): Uri? {
-        val baseDir = DocumentFile.fromTreeUri(context, treeUri) ?: return null
-
-        val target = baseDir.findFile(subfolder)
-            ?: baseDir.createDirectory(subfolder)
-
-        return target?.uri
-    }
-
-
-    fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
-        val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return
-        val jpgs = dir.listFiles()
-            .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
-            .sortedBy { it.name!!.lowercase() }
-
-        jpgs.forEachIndexed { index, doc ->
-            val newName = "%05d.jpg".format(index)
-            if (doc.name != newName) {
-                val ok = doc.renameTo(newName)
-                Log.i("SAFRename", "Renamed ${doc.name} → $newName : $ok")
-            }
-        }
-    }
-
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_TREE && resultCode == Activity.RESULT_OK) {
-            data?.data?.let { treeUri ->
-                val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                contentResolver.takePersistableUriPermission(treeUri, flags)
-
-                getSharedPreferences("saf_prefs", MODE_PRIVATE)
-                    .edit()
-                    .putString("stopmotion_tree", treeUri.toString())
-                    .apply()
-            }
-        }
-    }
-
-    fun getSavedStopMotionTreeUri(context: Context): Uri? {
-        val uriStr = context
-            .getSharedPreferences("saf_prefs", Context.MODE_PRIVATE)
-            .getString("stopmotion_tree", null)
-        return uriStr?.let { Uri.parse(it) }
     }
 }
