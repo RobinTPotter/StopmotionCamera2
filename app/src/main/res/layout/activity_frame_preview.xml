@@ -26,7 +26,7 @@
         android:paddingEnd="12dp"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
-        android:gravity="center_vertical">
+        android:gravity="top">
 
         <!-- Frame Counter -->
 
@@ -47,7 +47,7 @@
             <Button
                 android:id="@+id/playButton"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="42dp"
                 android:text="▶ Play"
                 android:textSize="13sp"
                 android:paddingStart="12dp"
@@ -58,7 +58,7 @@
             <Button
                 android:id="@+id/closeButton"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="42dp"
                 android:text="✕ Close"
                 android:textSize="13sp"
                 android:paddingStart="12dp"
@@ -86,7 +86,7 @@
             <Button
                 android:id="@+id/fps8Button"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="42dp"
                 android:text="8"
                 android:textSize="13sp"
                 android:paddingStart="10dp"
@@ -97,7 +97,7 @@
             <Button
                 android:id="@+id/fps12Button"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="w2dp"
                 android:text="12"
                 android:textSize="13sp"
                 android:paddingStart="10dp"
@@ -109,7 +109,7 @@
             <Button
                 android:id="@+id/fps24Button"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="42dp"
                 android:text="24"
                 android:textSize="13sp"
                 android:paddingStart="10dp"
