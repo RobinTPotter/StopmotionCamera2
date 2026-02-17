@@ -1,5 +1,10 @@
 package com.robin.stopmotioncamera2
 
+import androidx.camera.core.Camera
+import android.view.MotionEvent
+import androidx.camera.core.FocusMeteringAction
+
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -13,6 +18,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
 import android.util.Size
+
 import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.ImageView
@@ -23,7 +29,9 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio
+
 import androidx.camera.core.CameraSelector
+
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
@@ -57,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private var savedImages: MutableList<Uri?> = mutableListOf()
     private var currentScene: Int = 0
     private var onionSkins: Int = 2
+    private var camera: Camera? = null
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +93,17 @@ class MainActivity : AppCompatActivity() {
             label.text = String.format("Scene %d", currentScene)
             updateSavedImages()
         }
+
+
+
+        previewView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                tapToFocus(event.x, event.y)
+                true
+            } else false
+        }
+
+
 
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
@@ -114,6 +134,18 @@ class MainActivity : AppCompatActivity() {
         label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
     }
+
+
+
+    private fun tapToFocus(x: Float, y: Float) {
+        val point = previewView.meteringPointFactory.createPoint(x, y)
+        val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
+            .addPoint(point, FocusMeteringAction.FLAG_AE)
+            .disableAutoCancel()
+            .build()
+        camera?.cameraControl?.startFocusAndMetering(action)
+    }
+
 
     private fun updateSavedImages() {
         val sub = outputFolder(currentScene)
@@ -219,7 +251,7 @@ class MainActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
                 imageCapture =
                     ImageCapture.Builder().setResolutionSelector(resolutionSelector).build()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
 
             } catch (e: Exception) {
                 Log.e("CameraX", "Camera binding failed", e)
