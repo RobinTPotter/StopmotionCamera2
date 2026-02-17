@@ -11,7 +11,7 @@
         android:id="@+id/previewImageView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1.8"
+        android:layout_weight="1.5"
         android:scaleType="fitCenter"
         android:background="#000000" />
 
@@ -23,9 +23,9 @@
         android:orientation="vertical"
         android:background="#222222"
         android:paddingStart="2dp"
-        android:paddingEnd="2dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingEnd="0dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
         android:gravity="center_vertical">
 
         <!-- Frame Counter -->
@@ -36,7 +36,7 @@
             android:includeFontPadding="false"
             android:text="Frame 1 / 10"
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:gravity="center"
             android:paddingBottom="1dp" />
 
@@ -45,7 +45,7 @@
             android:id="@+id/frameSeekBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="2dp" />
+            android:layout_marginBottom="1dp" />
 
         <!-- Playback Controls + FPS all in one row -->
         <LinearLayout
@@ -60,7 +60,7 @@
                 android:layout_height="32dp"
                 android:text="▶ Play"
              android:insetTop="0dp"
-android:insetBottom="0dp"   android:textSize="13sp"
+android:insetBottom="0dp"   android:textSize="12sp"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
                 android:minWidth="0dp"
@@ -71,7 +71,7 @@ android:insetBottom="0dp"   android:textSize="13sp"
                 android:layout_width="wrap_content"
                 android:layout_height="32dp"
                 android:text="✕ Close"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:paddingStart="6dp"
              android:insetTop="0dp"
 android:insetBottom="0dp"   android:paddingEnd="6dp"
@@ -92,7 +92,7 @@ android:insetBottom="0dp"   android:paddingEnd="6dp"
                 android:layout_height="wrap_content"
                 android:text="FPS:"
                 android:textColor="#AAAAAA"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:layout_marginEnd="6dp" />
 
             <Button
@@ -101,9 +101,9 @@ android:insetBottom="0dp"   android:paddingEnd="6dp"
                 android:layout_height="32dp"
                 android:text="8"
               android:insetTop="0dp"
-android:insetBottom="0dp"  android:textSize="13sp"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
+android:insetBottom="0dp"  android:textSize="12sp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
 
@@ -113,9 +113,9 @@ android:insetBottom="0dp"  android:textSize="13sp"
                 android:layout_height="32dp"
                 android:text="12"
             android:insetTop="0dp"
-android:insetBottom="0dp"    android:textSize="13sp"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
+android:insetBottom="0dp"    android:textSize="12sp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:layout_marginStart="2dp" />
@@ -126,9 +126,9 @@ android:insetBottom="0dp"    android:textSize="13sp"
                 android:layout_height="32dp"
                 android:text="24"
             android:insetTop="0dp"
-android:insetBottom="0dp"    android:textSize="13sp"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
+android:insetBottom="0dp"    android:textSize="12sp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:layout_marginStart="4dp" />
