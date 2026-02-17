@@ -98,7 +98,7 @@
                 android:layout_height="32dp"
                 android:text="8"
                 android:textSize="13sp"
-                android:paddingStart=5dp"
+                android:paddingStart="5dp"
                 android:paddingEnd="5dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
