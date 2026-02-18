@@ -63,14 +63,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var label: TextView
     private var savedImages: MutableList<Uri?> = mutableListOf()
     private var currentScene: Int = 0
-    private var onionSkins: Int = 2
     private var camera: Camera? = null
+    private var onionSkins: Int = 2
+    private var opacityStart: Float = 0.5f
+    private var opacityEnd: Float = 0.35f
+    private var showCrosshair: Boolean = true
+    private var showThirds: Boolean = false
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+loadSettings();
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
         window.insetsController?.systemBarsBehavior =
             WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -120,9 +124,32 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        val settingsButton = findViewById<Button>(R.id.settingsButton)
+        settingsButton.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+
         // Initialize onion skins for the default scene
         label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
+    }
+
+
+    private fun loadSettings() {
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        onionSkins = prefs.getInt("onion_skins", 2)
+        opacityStart = prefs.getFloat("opacity_start", 0.5f)
+        opacityEnd = prefs.getFloat("opacity_end", 0.35f)
+        showCrosshair = prefs.getBoolean("show_crosshair", true)
+        showThirds = prefs.getBoolean("show_thirds", false)
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        loadSettings()
+        updateSavedImages()  // Refresh with new settings
     }
 
     private fun tapToFocus(x: Float, y: Float) {
@@ -139,7 +166,17 @@ class MainActivity : AppCompatActivity() {
         Log.i("MainActivity", "updateSavedImages for folder: $sub")
         savedImages = getLastImagesByName(this@MainActivity, sub, numImages = onionSkins)
 
-        val resultBitmap: Bitmap = updateOnionSkins(this@MainActivity, savedImages, onionSkins)
+        val resultBitmap: Bitmap = updateOnionSkins(                                                               this@MainActivity,
+    savedImages,                                                                onionSkins,
+    showCrosshair,
+    showThirds,
+    opacityStart,
+    opacityEnd
+)
+
+
+
+//updateOnionSkins(this@MainActivity, savedImages, onionSkins)
         
         onionSkinView.setImageBitmap(resultBitmap)
         Log.i("MainActivity", "Onion skin updated with ${savedImages.size} images")

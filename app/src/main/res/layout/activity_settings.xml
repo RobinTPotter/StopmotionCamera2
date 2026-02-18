@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#222222"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="24dp" />
+
+        <!-- Onion Skins -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Number of Onion Skins"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
+
+            <SeekBar
+                android:id="@+id/onionSkinsSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/onionSkinsValue"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
+                android:text="2"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginStart="16dp" />
+        </LinearLayout>
+
+        <!-- Opacity Start -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Opacity Start (newest frame)"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
+
+            <SeekBar
+                android:id="@+id/opacityStartSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/opacityStartValue"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="0.50"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginStart="16dp" />
+        </LinearLayout>
+
+        <!-- Opacity End -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Opacity End (oldest frame)"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
+
+            <SeekBar
+                android:id="@+id/opacityEndSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/opacityEndValue"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="0.35"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginStart="16dp" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#555555"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Crosshair Checkbox -->
+        <CheckBox
+            android:id="@+id/crosshairCheckbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Crosshair"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="16dp" />
+
+        <!-- Thirds Checkbox -->
+        <CheckBox
+            android:id="@+id/thirdsCheckbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Rule of Thirds Grid"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="32dp" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/saveButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Save"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:textSize="16sp"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

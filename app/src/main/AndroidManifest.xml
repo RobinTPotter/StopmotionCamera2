@@ -39,6 +39,12 @@
             android:screenOrientation="landscape"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
+<!-- ADD THIS - No intent filter needed! -->
+        <activity
+            android:name="com.robin.stopmotioncamera2.SettingsActivity"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+
 
 
 
