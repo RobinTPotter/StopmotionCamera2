@@ -13,6 +13,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      # Path to your keystore in the repo. Adjust if it's elsewhere.
+      KEYSTORE_PATH: app/debug.keystore
+      # If your custom debug.keystore uses default debug creds, these can be 'android' and 'androiddebugkey'.
+      # If they are different, store them in GitHub Secrets and reference them here.
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'androiddebugkey' }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,11 +33,26 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Verify keystore exists
+        run: |
+          if [ ! -f "$KEYSTORE_PATH" ]; then
+            echo "Keystore not found at $KEYSTORE_PATH"
+            exit 1
+          fi
+          echo "Keystore found at $KEYSTORE_PATH"
+
       - name: Grant execute permission to Gradle
         run: chmod +x ./gradlew
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Build signed RELEASE APK
+        # The android.injected.signing.* properties instruct Gradle to sign the release build
+        run: |
+          ./gradlew \
+            assembleRelease \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
       - name: Create a new tag
         run: |
@@ -36,6 +60,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git fetch --tags
           TAG="v1.0.${{ github.run_number }}"
+          # Uncomment to actually create & push the tag:
           # git tag "$TAG"
           # git push origin "$TAG"
         env:
@@ -46,6 +71,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
