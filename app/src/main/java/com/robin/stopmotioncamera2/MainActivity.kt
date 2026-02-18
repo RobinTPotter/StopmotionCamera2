@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private var onionSkins: Int = 2
     private var opacityStart: Float = 0.5f
     private var opacityEnd: Float = 0.35f
+    private var opacityTotal: Float = 0.35f
     private var showCrosshair: Boolean = true
     private var showThirds: Boolean = false
 
@@ -140,6 +141,7 @@ loadSettings();
         val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
         onionSkins = prefs.getInt("onion_skins", 2)
         opacityStart = prefs.getFloat("opacity_start", 0.5f)
+        opacityTotal = prefs.getFloat("opacity_total", 0.5f)
         opacityEnd = prefs.getFloat("opacity_end", 0.35f)
         showCrosshair = prefs.getBoolean("show_crosshair", true)
         showThirds = prefs.getBoolean("show_thirds", false)
@@ -149,6 +151,7 @@ loadSettings();
     override fun onResume() {
         super.onResume()
         loadSettings()
+        onionSkinView.alpha = opacityTotal
         updateSavedImages()  // Refresh with new settings
     }
 

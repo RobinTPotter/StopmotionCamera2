@@ -121,13 +121,44 @@
                 android:layout_marginStart="16dp" />
         </LinearLayout>
 
-        <!-- Divider -->
-        <View
+
+
+
+        <!-- Opacity End -->
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#555555"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp" />
+            android:layout_height="wrap_content"
+            android:text="Opacity Onion Skin"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
+
+            <SeekBar
+                android:id="@+id/opacityTotalSeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/opacityTotalValue"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="0.35"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginStart="16dp" />
+        </LinearLayout>
+
+
+
 
         <!-- Crosshair Checkbox -->
         <CheckBox

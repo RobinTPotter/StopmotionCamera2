@@ -15,6 +15,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var opacityStartValue: TextView
     private lateinit var opacityEndSeekBar: SeekBar
     private lateinit var opacityEndValue: TextView
+    private lateinit var opacityTotalSeekBar: SeekBar
+    private lateinit var opacityTotalValue: TextView
     private lateinit var crosshairCheckbox: CheckBox
     private lateinit var thirdsCheckbox: CheckBox
     private lateinit var saveButton: Button
@@ -31,6 +33,8 @@ class SettingsActivity : AppCompatActivity() {
         opacityStartValue = findViewById(R.id.opacityStartValue)
         opacityEndSeekBar = findViewById(R.id.opacityEndSeekBar)
         opacityEndValue = findViewById(R.id.opacityEndValue)
+        opacityTotalSeekBar = findViewById(R.id.opacityTotalSeekBar)
+        opacityTotalValue = findViewById(R.id.opacityTotalValue)
         crosshairCheckbox = findViewById(R.id.crosshairCheckbox)
         thirdsCheckbox = findViewById(R.id.thirdsCheckbox)
         saveButton = findViewById(R.id.saveButton)
@@ -41,6 +45,7 @@ class SettingsActivity : AppCompatActivity() {
         val numSkins = prefs.getInt("onion_skins", 2)
         val opacityStart = prefs.getFloat("opacity_start", 0.5f)
         val opacityEnd = prefs.getFloat("opacity_end", 0.35f)
+        val opacityTotal = prefs.getFloat("opacity_total", 0.35f)
         val showCrosshair = prefs.getBoolean("show_crosshair", true)
         val showThirds = prefs.getBoolean("show_thirds", false)
         
@@ -79,6 +84,18 @@ class SettingsActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        // Setup opacity total (0.0 - 1.0, stored as 0-100 in seekbar)
+        opacityTotalSeekBar.max = 100
+        opacityTotalSeekBar.progress = (opacityTotal * 100).toInt()
+        opacityTotalValue.text = String.format("%.2f", opacityTotal)
+        opacityTotalSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                opacityTotalValue.text = String.format("%.2f", progress / 100f)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
         
         // Setup checkboxes
         crosshairCheckbox.isChecked = showCrosshair
@@ -90,6 +107,7 @@ class SettingsActivity : AppCompatActivity() {
             editor.putInt("onion_skins", onionSkinsSeekBar.progress)
             editor.putFloat("opacity_start", opacityStartSeekBar.progress / 100f)
             editor.putFloat("opacity_end", opacityEndSeekBar.progress / 100f)
+            editor.putFloat("opacity_total", opacityTotalSeekBar.progress / 100f)
             editor.putBoolean("show_crosshair", crosshairCheckbox.isChecked)
             editor.putBoolean("show_thirds", thirdsCheckbox.isChecked)
             editor.apply()
