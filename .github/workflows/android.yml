@@ -15,7 +15,7 @@ jobs:
 
     env:
       # Path to your keystore in the repo. Adjust if it's elsewhere.
-      KEYSTORE_PATH: app/debug.keystore
+      KEYSTORE_PATH: ./debug.keystore
       # If your custom debug.keystore uses default debug creds, these can be 'android' and 'androiddebugkey'.
       # If they are different, store them in GitHub Secrets and reference them here.
       KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
