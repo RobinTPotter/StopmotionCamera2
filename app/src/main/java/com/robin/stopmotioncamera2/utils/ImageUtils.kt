@@ -16,50 +16,54 @@ fun updateOnionSkins(context: Context, savedImages: MutableList<Uri?>, skins: In
     
     Log.i("ImageUtils", "updateOnionSkins called with ${savedImages.size} images, skins=$skins")
     
-    // savedImages is in DESC order (newest first)
-    // Draw oldest to newest with gentle alpha increase
-    
-    try {
-        val numToDraw = minOf(savedImages.size, skins)
-        
-        // Gentle gradient: oldest at 0.35, newest at 0.5
-        val minAlpha = 0.35f
-        val maxAlpha = 0.5f
-        
-        for (i in 0 until numToDraw) {
-            // Calculate index in savedImages (newest first list)
-            val imageIndex = numToDraw - 1 - i
-            
-            // Calculate alpha with gentle gradient
-            // For 2 skins: [0.35, 0.5]
-            // For 3 skins: [0.35, 0.425, 0.5]
-            val alphaValue = if (numToDraw == 1) {
-                maxAlpha
-            } else {
-                minAlpha + (maxAlpha - minAlpha) * i / (numToDraw - 1)
-            }
-            
-            val uri = savedImages[imageIndex]
-            Log.i("ImageUtils", "Drawing layer $i: savedImages[$imageIndex] with alpha=$alphaValue (${(alphaValue * 100).toInt()}%), uri=$uri")
-            
-            val inputStream = uri?.let { context.contentResolver.openInputStream(it) }
-            val bm = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            
-            if (bm != null) {
-                val paint = Paint().apply {
-                    this.alpha = (alphaValue * 255).toInt()
-                    isFilterBitmap = true
-                }
-                c.drawBitmap(bm, 0f, 0f, paint)
-                Log.i("ImageUtils", "Successfully drew bitmap: alpha=${(alphaValue * 255).toInt()}/255")
-            } else {
-                Log.w("ImageUtils", "Failed to decode bitmap for index $imageIndex")
-            }
-        }
-    } catch (e: Exception) {
-        Log.e("ImageUtils", "Error updating onion skins: ${e.message}", e)
-    }
+	if (savedImages.size>0) {
+		
+		// savedImages is in DESC order (newest first)
+		// Draw oldest to newest with gentle alpha increase
+		
+		try {
+			val numToDraw = minOf(savedImages.size, skins)
+			
+			// Gentle gradient: oldest at 0.35, newest at 0.5
+			val minAlpha = 0.35f
+			val maxAlpha = 0.5f
+			
+			for (i in 0 until numToDraw) {
+				// Calculate index in savedImages (newest first list)
+				val imageIndex = numToDraw - 1 - i
+				
+				// Calculate alpha with gentle gradient
+				// For 2 skins: [0.35, 0.5]
+				// For 3 skins: [0.35, 0.425, 0.5]
+				val alphaValue = if (numToDraw == 1) {
+					maxAlpha
+				} else {
+					minAlpha + (maxAlpha - minAlpha) * i / (numToDraw - 1)
+				}
+				
+				val uri = savedImages[imageIndex]
+				Log.i("ImageUtils", "Drawing layer $i: savedImages[$imageIndex] with alpha=$alphaValue (${(alphaValue * 100).toInt()}%), uri=$uri")
+				
+				val inputStream = uri?.let { context.contentResolver.openInputStream(it) }
+				val bm = BitmapFactory.decodeStream(inputStream)
+				inputStream?.close()
+				
+				if (bm != null) {
+					val paint = Paint().apply {
+						this.alpha = (alphaValue * 255).toInt()
+						isFilterBitmap = true
+					}
+					c.drawBitmap(bm, 0f, 0f, paint)
+					Log.i("ImageUtils", "Successfully drew bitmap: alpha=${(alphaValue * 255).toInt()}/255")
+				} else {
+					Log.w("ImageUtils", "Failed to decode bitmap for index $imageIndex")
+				}
+			}
+		} catch (e: Exception) {
+			Log.e("ImageUtils", "Error updating onion skins: ${e.message}", e)
+		}
+		
+	}
     
     // Draw crosshairs
     val p = Paint(Color.BLACK)

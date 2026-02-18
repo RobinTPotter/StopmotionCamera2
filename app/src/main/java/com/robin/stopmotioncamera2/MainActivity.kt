@@ -4,7 +4,6 @@ import androidx.camera.core.Camera
 import android.view.MotionEvent
 import androidx.camera.core.FocusMeteringAction
 
-
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -80,12 +79,10 @@ class MainActivity : AppCompatActivity() {
         onionSkinView = findViewById(R.id.onionSkinView)
         label = findViewById(R.id.label)
 
-
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
             takePicture()
         }
-
 
         val upSceneButton = findViewById<Button>(R.id.upFolder)
         upSceneButton.setOnClickListener {
@@ -94,17 +91,12 @@ class MainActivity : AppCompatActivity() {
             updateSavedImages()
         }
 
-
-
         previewView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 tapToFocus(event.x, event.y)
                 true
             } else false
         }
-
-
-
 
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
@@ -118,7 +110,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-        
 
         // Add this to your MainActivity.kt onCreate() method:
 
@@ -129,13 +120,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-
         // Initialize onion skins for the default scene
         label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
     }
-
-
 
     private fun tapToFocus(x: Float, y: Float) {
         val point = previewView.meteringPointFactory.createPoint(x, y)
@@ -146,17 +134,13 @@ class MainActivity : AppCompatActivity() {
         camera?.cameraControl?.startFocusAndMetering(action)
     }
 
-
     private fun updateSavedImages() {
         val sub = outputFolder(currentScene)
         Log.i("MainActivity", "updateSavedImages for folder: $sub")
         savedImages = getLastImagesByName(this@MainActivity, sub, numImages = onionSkins)
 
-        val resultBitmap: Bitmap = if (savedImages.size > 0) {
-            updateOnionSkins(this@MainActivity, savedImages, onionSkins)
-        } else {
-            Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
-        }
+        val resultBitmap: Bitmap = updateOnionSkins(this@MainActivity, savedImages, onionSkins)
+        
         onionSkinView.setImageBitmap(resultBitmap)
         Log.i("MainActivity", "Onion skin updated with ${savedImages.size} images")
     }
@@ -185,11 +169,11 @@ class MainActivity : AppCompatActivity() {
                                 Log.i("MainActivity", "Renaming files in $sub")
                                 renameAllJpgImagesAlphabetically(this@MainActivity, sub)
                             }
-                            
+
                             // After renaming, get the next available file number
                             val next = nextFile(this@MainActivity, sub)
                             Log.i("MainActivity", "Next file will be: $next")
-                            
+
                             // Save the new image
                             val uri = saveImageToPublicPictures(
                                 this@MainActivity, temp, sub, next
@@ -197,17 +181,17 @@ class MainActivity : AppCompatActivity() {
 
                             if (uri != null) {
                                 Log.i("MainActivity", "Saved new image: $uri")
-                                
+
                                 // Update the saved images list and refresh onion skins
                                 updateSavedImages()
-                                
+
                                 label.text = "Frame: $next"
-                                Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
+                                // Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
                             } else {
                                 Log.e("MainActivity", "Failed to save image")
                                 Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
                             }
-                            
+
                         } catch (e: Exception) {
                             Log.e("MainActivity", "Error in save/rename process: ${e.message}", e)
                             Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -259,7 +243,6 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -274,7 +257,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
