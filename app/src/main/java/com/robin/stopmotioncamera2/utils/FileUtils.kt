@@ -17,10 +17,46 @@ import java.util.Date
 import java.util.Locale
 
 
+// Replace the nextFile() function in FileUtils.kt with this:
+
 fun nextFile(context: Context, outputFolder: String): String {
-    val nextNumber = countImagesInFolder(context, outputFolder)
-    return String.format("%05d.jpg", nextNumber)
+    var nextNumber = countImagesInFolder(context, outputFolder)
+    var filename = String.format("%05d.jpg", nextNumber)
+    
+    // Double-check: if this filename already exists, increment until we find an available one
+    var attempts = 0
+    while (fileExists(context, outputFolder, filename) && attempts < 20) {
+        Log.w("FileUtils", "File $filename already exists in $outputFolder, trying next number")
+        nextNumber++
+        filename = String.format("%05d.jpg", nextNumber)
+        attempts++
+    }
+    
+    if (attempts > 0) {
+        Log.i("FileUtils", "nextFile($outputFolder) = $filename after $attempts collision checks")
+    }
+    return filename
 }
+
+private fun fileExists(context: Context, folderName: String, filename: String): Boolean {
+    val projection = arrayOf(MediaStore.Images.Media._ID)
+    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? AND ${MediaStore.Images.Media.DISPLAY_NAME} = ?"
+    val selectionArgs = arrayOf("%$folderName%", filename)
+    
+    val cursor = context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        null
+    )
+    
+    val exists = cursor?.use { it.count > 0 } ?: false
+    cursor?.close()
+    return exists
+}
+
+
 
 fun outputFolder(scene: Int): String {
     val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
