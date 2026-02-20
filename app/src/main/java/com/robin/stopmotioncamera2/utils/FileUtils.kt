@@ -1,7 +1,6 @@
 package com.robin.stopmotioncamera2.utils
 
 import android.content.ContentUris
-import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
@@ -16,6 +15,63 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.documentfile.provider.DocumentFile
+import android.provider.DocumentsContract
+import android.content.ContentValues
+
+
+fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
+    // Use DocumentsContract to query ALL files
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+        folderUri,
+        DocumentsContract.getDocumentId(folderUri)
+    )
+    
+    val projection = arrayOf(
+        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+    )
+    
+    val jpgFiles = mutableListOf<Pair<Uri, String>>() // Uri and current name
+    
+    context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+        val idCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+        val nameCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        
+        while (cursor.moveToNext()) {
+            val name = cursor.getString(nameCol)
+            if (name.endsWith(".jpg", ignoreCase = true)) {
+                val docId = cursor.getString(idCol)
+                val docUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId)
+                jpgFiles.add(Pair(docUri, name))
+            }
+        }
+    }
+    
+    // Sort by name (alphabetically)
+    val sorted = jpgFiles.sortedBy { it.second.lowercase() }
+    
+    Log.i("SAFRename", "Found ${sorted.size} JPG files to rename")
+    
+    // Rename each file
+    sorted.forEachIndexed { index, (uri, oldName) ->
+        val newName = "%05d.jpg".format(index)
+        if (oldName != newName) {
+            val values = ContentValues().apply {
+                put(DocumentsContract.Document.COLUMN_DISPLAY_NAME, newName)
+            }
+            
+            try {
+                context.contentResolver.update(uri, values, null, null)
+                Log.i("SAFRename", "Renamed $oldName → $newName")
+            } catch (e: Exception) {
+                Log.e("SAFRename", "Failed to rename $oldName: ${e.message}")
+            }
+        }
+    }
+    
+    Log.i("SAFRename", "Renaming complete")
+}
+
 
 
 // Replace the nextFile() function in FileUtils.kt with this:
@@ -139,6 +195,54 @@ fun getCursor(context: Context, folderName: String, dir: String = "ASC"): Cursor
     Log.i("FileUtils", "getCursor($folderName) returned ${cursor?.count ?: 0} results")
     return cursor
 }
+
+
+fun getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int): MutableList<Uri?> {
+    val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return mutableListOf()
+    
+    // Use DocumentsContract to query ALL files, not just owned ones
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+        folderUri,
+        DocumentsContract.getDocumentId(folderUri)
+    )
+    
+    val projection = arrayOf(
+        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+        DocumentsContract.Document.COLUMN_MIME_TYPE
+    )
+    
+    val jpgUris = mutableListOf<Uri>()
+    
+    context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+        val idCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+        val nameCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        val mimeCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+        
+        while (cursor.moveToNext()) {
+            val name = cursor.getString(nameCol)
+            val mime = cursor.getString(mimeCol)
+            
+            if (name.endsWith(".jpg", ignoreCase = true) || mime == "image/jpeg") {
+                val docId = cursor.getString(idCol)
+                val docUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId)
+                jpgUris.add(docUri)
+            }
+        }
+    }
+    
+    // Sort by name DESC (newest first) and take N
+    val sorted = jpgUris
+        .sortedByDescending { uri ->
+            DocumentFile.fromSingleUri(context, uri)?.name ?: ""
+        }
+        .take(numImages)
+    
+    val result = sorted.map { it as Uri? }.toMutableList()
+    Log.i("FileUtils", "getLastImagesByNameWithSAF: Found ${result.size} images out of ${jpgUris.size} total")
+    return result
+}
+
 
 fun getLastImagesByName(context: Context, folderName: String, numImages: Int): MutableList<Uri?> {
 
@@ -264,7 +368,7 @@ suspend fun listing(
  * Get last N images using SAF instead of MediaStore
  * This works even if files are "owned" by a previous app installation
  */
-fun getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int): MutableList<Uri?> {
+fun old_getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int): MutableList<Uri?> {
     val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return mutableListOf()
     
     val jpgs = dir.listFiles()

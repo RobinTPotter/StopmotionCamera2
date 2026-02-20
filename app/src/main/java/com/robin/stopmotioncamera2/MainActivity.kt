@@ -352,7 +352,7 @@ class MainActivity : AppCompatActivity() {
         return target?.uri
     }
 
-    fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
+    fun old_renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
         val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return
         val jpgs = dir.listFiles()
             .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
