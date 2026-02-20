@@ -272,7 +272,7 @@ fun getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int)
         .sortedByDescending { it.name!!.lowercase() }  // DESC order (newest first)
         .take(numImages)
     
-    val imageUris = jpgs.map { it.uri }.toMutableList()
+    val imageUris = jpgs.map { it.uri as Uri? }.toMutableList()
     
     Log.i("FileUtils", "getLastImagesByNameWithSAF: Found ${imageUris.size} images")
     return imageUris
