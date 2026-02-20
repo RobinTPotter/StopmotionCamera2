@@ -1,3 +1,4 @@
+
 package com.robin.stopmotioncamera2
 
 import androidx.camera.core.Camera
@@ -50,6 +51,8 @@ import com.robin.stopmotioncamera2.utils.outputFolder
 import com.robin.stopmotioncamera2.utils.renameAllJpgImagesAlphabetically
 import com.robin.stopmotioncamera2.utils.saveImageToPublicPictures
 import com.robin.stopmotioncamera2.utils.updateOnionSkins
+import com.robin.stopmotioncamera2.utils.rebuildMediaStoreForStopMotion
+import com.robin.stopmotioncamera2.utils.needsMediaStoreRebuild
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,7 +78,23 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-loadSettings();
+        loadSettings();
+        // Check if MediaStore needs rebuilding
+        lifecycleScope.launch {
+            if (needsMediaStoreRebuild(this@MainActivity)) {
+                Log.i("MainActivity", "MediaStore out of sync, rebuilding...")
+                rebuildMediaStoreForStopMotion(this@MainActivity)
+                
+                // Refresh onion skins after rebuild
+                withContext(Dispatchers.Main) {
+                    updateSavedImages()
+                }
+            }
+        }
+
+
+
+
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
         window.insetsController?.systemBarsBehavior =
             WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
