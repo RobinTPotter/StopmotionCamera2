@@ -5,13 +5,16 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.resume
 
 /**
  * Removes all MediaStore entries under Pictures/StopMotion and rescans files
- * This "adopts" orphaned files from previous app installations
+ * PROPERLY WAITS for scanning to complete
  */
 suspend fun rebuildMediaStoreForStopMotion(context: Context) = withContext(Dispatchers.IO) {
     try {
@@ -43,10 +46,10 @@ suspend fun rebuildMediaStoreForStopMotion(context: Context) = withContext(Dispa
         }
         
         // Recursively find all JPG files
-        val jpgFiles = mutableListOf<String>()
+        val jpgFiles = mutableListOf<File>()
         stopMotionDir.walkTopDown()
             .filter { it.isFile && it.extension.lowercase() == "jpg" }
-            .forEach { jpgFiles.add(it.absolutePath) }
+            .forEach { jpgFiles.add(it) }
         
         Log.i("MediaStoreRebuild", "Found ${jpgFiles.size} JPG files to scan")
         
@@ -55,17 +58,19 @@ suspend fun rebuildMediaStoreForStopMotion(context: Context) = withContext(Dispa
             return@withContext
         }
         
-        // Step 3: Scan all files to add them back to MediaStore
+        // Step 3: Scan each file ONE BY ONE and wait for completion
         var scannedCount = 0
-        MediaScannerConnection.scanFile(
-            context,
-            jpgFiles.toTypedArray(),
-            arrayOf("image/jpeg"),
-            { path, uri ->
+        for ((index, file) in jpgFiles.withIndex()) {
+            try {
+                scanFileSuspend(context, file.absolutePath, "image/jpeg")
                 scannedCount++
-                Log.d("MediaStoreRebuild", "Scanned [$scannedCount/${jpgFiles.size}]: $path")
+                if ((index + 1) % 10 == 0 || index == jpgFiles.size - 1) {
+                    Log.i("MediaStoreRebuild", "Progress: ${index + 1}/${jpgFiles.size}")
+                }
+            } catch (e: Exception) {
+                Log.e("MediaStoreRebuild", "Failed to scan ${file.name}: ${e.message}")
             }
-        )
+        }
         
         Log.i("MediaStoreRebuild", "MediaStore rebuild complete: $scannedCount files scanned")
         
@@ -75,23 +80,42 @@ suspend fun rebuildMediaStoreForStopMotion(context: Context) = withContext(Dispa
 }
 
 /**
- * Quick check if MediaStore needs rebuilding
- * Returns true if there are files on disk but not in MediaStore
+ * Scans a single file and WAITS for completion using coroutine suspension
  */
-fun needsMediaStoreRebuild(context: Context): Boolean {
+private suspend fun scanFileSuspend(context: Context, path: String, mimeType: String): Uri? {
+    return suspendCancellableCoroutine { continuation ->
+        MediaScannerConnection.scanFile(
+            context,
+            arrayOf(path),
+            arrayOf(mimeType)
+        ) { scannedPath, uri ->
+            if (continuation.isActive) {
+                continuation.resume(uri)
+            }
+        }
+    }
+}
+
+/**
+ * Quick check if MediaStore needs rebuilding
+ * Uses SAF to count files (sees all files, not just owned ones)
+ */
+suspend fun needsMediaStoreRebuild(context: Context, treeUri: Uri?): Boolean = withContext(Dispatchers.IO) {
     try {
-        // Count files on disk
-        val stopMotionDir = File(
-            android.os.Environment.getExternalStoragePublicDirectory(
-                android.os.Environment.DIRECTORY_PICTURES
-            ),
-            "StopMotion"
-        )
+        if (treeUri == null) {
+            Log.i("MediaStoreCheck", "No SAF access")
+            return@withContext false
+        }
         
-        if (!stopMotionDir.exists()) return false
-        
-        val filesOnDisk = stopMotionDir.walkTopDown()
-            .count { it.isFile && it.extension.lowercase() == "jpg" }
+        // Count files using SAF (sees ALL files, even from other apps)
+        val baseDir = DocumentFile.fromTreeUri(context, treeUri) ?: return@withContext false
+        var filesOnDisk = 0
+        baseDir.listFiles().forEach { subfolder ->
+            if (subfolder.isDirectory) {
+                filesOnDisk += subfolder.listFiles()
+                    .count { it.isFile && it.name?.endsWith(".jpg", true) == true }
+            }
+        }
         
         // Count files in MediaStore
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
@@ -111,12 +135,12 @@ fun needsMediaStoreRebuild(context: Context): Boolean {
         
         val needsRebuild = filesOnDisk > filesInMediaStore
         
-        Log.i("MediaStoreCheck", "Files on disk: $filesOnDisk, in MediaStore: $filesInMediaStore, needs rebuild: $needsRebuild")
+        Log.i("MediaStoreCheck", "Files on disk (SAF): $filesOnDisk, in MediaStore: $filesInMediaStore, needs rebuild: $needsRebuild")
         
-        return needsRebuild
+        return@withContext needsRebuild
         
     } catch (e: Exception) {
         Log.e("MediaStoreCheck", "Error checking: ${e.message}", e)
-        return false
+        return@withContext false
     }
 }

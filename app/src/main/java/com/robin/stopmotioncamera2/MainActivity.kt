@@ -1,16 +1,15 @@
-
 package com.robin.stopmotioncamera2
 
 import androidx.camera.core.Camera
 import android.view.MotionEvent
 import androidx.camera.core.FocusMeteringAction
-
 import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,7 +17,6 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
 import android.util.Size
-
 import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.ImageView
@@ -29,9 +27,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio
-
 import androidx.camera.core.CameraSelector
-
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
@@ -44,15 +40,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
-import com.robin.stopmotioncamera2.utils.getLastImagesByName
-import com.robin.stopmotioncamera2.utils.hasCameraPermission
-import com.robin.stopmotioncamera2.utils.nextFile
-import com.robin.stopmotioncamera2.utils.outputFolder
-import com.robin.stopmotioncamera2.utils.renameAllJpgImagesAlphabetically
-import com.robin.stopmotioncamera2.utils.saveImageToPublicPictures
-import com.robin.stopmotioncamera2.utils.updateOnionSkins
-import com.robin.stopmotioncamera2.utils.rebuildMediaStoreForStopMotion
-import com.robin.stopmotioncamera2.utils.needsMediaStoreRebuild
+import com.robin.stopmotioncamera2.utils.*
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -64,13 +52,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var onionSkinView: ImageView
     private lateinit var imageCapture: ImageCapture
     private lateinit var label: TextView
+    private var treeUri: Uri? = null
     private var savedImages: MutableList<Uri?> = mutableListOf()
     private var currentScene: Int = 0
     private var camera: Camera? = null
     private var onionSkins: Int = 2
     private var opacityStart: Float = 0.5f
     private var opacityEnd: Float = 0.35f
-    private var opacityTotal: Float = 0.35f
+    private var opacityTotal: Float = 0.5f
     private var showCrosshair: Boolean = true
     private var showThirds: Boolean = false
 
@@ -78,22 +67,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        loadSettings();
-        // Check if MediaStore needs rebuilding
-        lifecycleScope.launch {
-            if (needsMediaStoreRebuild(this@MainActivity)) {
-                Log.i("MainActivity", "MediaStore out of sync, rebuilding...")
-                rebuildMediaStoreForStopMotion(this@MainActivity)
-                
-                // Refresh onion skins after rebuild
-                withContext(Dispatchers.Main) {
-                    updateSavedImages()
-                }
-            }
+        
+        loadSettings()
+        
+        treeUri = getSavedStopMotionTreeUri(this@MainActivity)
+        if (treeUri == null) {
+            launchStopMotionPicker(this)
         }
-
-
-
 
         window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
         window.insetsController?.systemBarsBehavior =
@@ -102,6 +82,14 @@ class MainActivity : AppCompatActivity() {
         previewView = findViewById(R.id.previewView)
         onionSkinView = findViewById(R.id.onionSkinView)
         label = findViewById(R.id.label)
+
+        // Tap to focus
+        previewView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                tapToFocus(event.x, event.y)
+                true
+            } else false
+        }
 
         val captureButton = findViewById<Button>(R.id.captureButton)
         captureButton.setOnClickListener {
@@ -115,27 +103,12 @@ class MainActivity : AppCompatActivity() {
             updateSavedImages()
         }
 
-        previewView.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                tapToFocus(event.x, event.y)
-                true
-            } else false
-        }
-
         val downSceneButton = findViewById<Button>(R.id.downFolder)
         downSceneButton.setOnClickListener {
             if (currentScene > 0) currentScene -= 1
             label.text = String.format("Scene %d", currentScene)
             updateSavedImages()
         }
-
-        if (hasCameraPermission(this)) {
-            startCamera()
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-        }
-
-        // Add this to your MainActivity.kt onCreate() method:
 
         val previewButton = findViewById<Button>(R.id.previewButton)
         previewButton.setOnClickListener {
@@ -150,11 +123,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Initialize onion skins for the default scene
+        if (hasCameraPermission(this)) {
+            startCamera()
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+        }
+
         label.text = String.format("Scene %d", currentScene)
         updateSavedImages()
     }
-
 
     private fun loadSettings() {
         val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
@@ -166,12 +143,30 @@ class MainActivity : AppCompatActivity() {
         showThirds = prefs.getBoolean("show_thirds", false)
     }
 
-
     override fun onResume() {
         super.onResume()
         loadSettings()
+        
+        // Set onion skin view opacity
         onionSkinView.alpha = opacityTotal
-        updateSavedImages()  // Refresh with new settings
+        if (opacityTotal >= 1.0f) {
+            onionSkinView.setBackgroundColor(Color.BLACK)
+        } else {
+            onionSkinView.background = null
+        }
+        
+        // Rebuild MediaStore if needed (optional, for gallery app compatibility)
+        lifecycleScope.launch {
+            if (needsMediaStoreRebuild(this@MainActivity, treeUri)) {
+                Log.i("MainActivity", "MediaStore needs rebuild")
+                rebuildMediaStoreForStopMotion(this@MainActivity)
+            }
+            
+            // Always update saved images using SAF
+            withContext(Dispatchers.Main) {
+                updateSavedImages()
+            }
+        }
     }
 
     private fun tapToFocus(x: Float, y: Float) {
@@ -186,20 +181,32 @@ class MainActivity : AppCompatActivity() {
     private fun updateSavedImages() {
         val sub = outputFolder(currentScene)
         Log.i("MainActivity", "updateSavedImages for folder: $sub")
-        savedImages = getLastImagesByName(this@MainActivity, sub, numImages = onionSkins)
-
-        val resultBitmap: Bitmap = updateOnionSkins(                                                               this@MainActivity,
-    savedImages,                                                                onionSkins,
-    showCrosshair,
-    showThirds,
-    opacityStart,
-    opacityEnd
-)
-
-
-
-//updateOnionSkins(this@MainActivity, savedImages, onionSkins)
         
+        // Get subfolder URI for SAF access
+        val subUri = treeUri?.let { getSubfolderUriFromTreeUri(this@MainActivity, it, sub) }
+        
+        // Use SAF to load images instead of MediaStore
+        savedImages = if (subUri != null) {
+            getLastImagesByNameWithSAF(this@MainActivity, subUri, onionSkins)
+        } else {
+            Log.w("MainActivity", "No SAF access, can't load images")
+            mutableListOf()
+        }
+
+        val resultBitmap: Bitmap = if (savedImages.size > 0) {
+            updateOnionSkins(
+                this@MainActivity,
+                savedImages,
+                onionSkins,
+                showCrosshair,
+                showThirds,
+                opacityStart,
+                opacityEnd
+            )
+        } else {
+            Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
+        }
+
         onionSkinView.setImageBitmap(resultBitmap)
         Log.i("MainActivity", "Onion skin updated with ${savedImages.size} images")
     }
@@ -216,39 +223,41 @@ class MainActivity : AppCompatActivity() {
                     Log.d("CameraX", "Saved to ${photoFile.absolutePath}")
                     val temp = BitmapFactory.decodeFile(photoFile.absolutePath)
 
-                    // Use consistent folder path
                     val sub = outputFolder(currentScene)
                     Log.i("MainActivity", "Taking picture for folder: $sub")
 
-                    // Use coroutine for async operations
                     lifecycleScope.launch {
                         try {
-                            // Rename existing files on IO thread
-                            withContext(Dispatchers.IO) {
-                                Log.i("MainActivity", "Renaming files in $sub")
-                                renameAllJpgImagesAlphabetically(this@MainActivity, sub)
-                            }
+                            // Get subfolder URI for SAF
+                            val subUri = treeUri?.let { getSubfolderUriFromTreeUri(this@MainActivity, it, sub) }
 
-                            // After renaming, get the next available file number
-                            val next = nextFile(this@MainActivity, sub)
-                            Log.i("MainActivity", "Next file will be: $next")
+                            if (subUri != null) {
+                                // Rename existing files on IO thread
+                                withContext(Dispatchers.IO) {
+                                    Log.i("MainActivity", "Renaming files in $sub")
+                                    renameAllJpgsWithSAF(this@MainActivity, subUri)
+                                }
 
-                            // Save the new image
-                            val uri = saveImageToPublicPictures(
-                                this@MainActivity, temp, sub, next
-                            )
+                                // Use SAF to get next filename
+                                val next = nextFileWithSAF(this@MainActivity, subUri)
+                                Log.i("MainActivity", "Next file will be: $next")
 
-                            if (uri != null) {
-                                Log.i("MainActivity", "Saved new image: $uri")
+                                // Save the new image
+                                val uri = saveImageToPublicPictures(
+                                    this@MainActivity, temp, sub, next
+                                )
 
-                                // Update the saved images list and refresh onion skins
-                                updateSavedImages()
-
-                                label.text = "Frame: $next"
-                                // Toast.makeText(this@MainActivity, "Frame $next saved", Toast.LENGTH_SHORT).show()
+                                if (uri != null) {
+                                    Log.i("MainActivity", "Saved new image: $uri")
+                                    updateSavedImages()
+                                    label.text = "Frame: $next"
+                                } else {
+                                    Log.e("MainActivity", "Failed to save image")
+                                    Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
-                                Log.e("MainActivity", "Failed to save image")
-                                Toast.makeText(this@MainActivity, "Error saving frame", Toast.LENGTH_SHORT).show()
+                                Log.e("MainActivity", "No SAF access")
+                                Toast.makeText(this@MainActivity, "No folder access", Toast.LENGTH_SHORT).show()
                             }
 
                         } catch (e: Exception) {
@@ -317,7 +326,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun launchStopMotionPicker(activity: Activity) {
+        val pictures = Environment.getExternalStoragePublicDirectory(
+            Environment.DIRECTORY_PICTURES
+        )
+        val stopMotionDir = File(pictures, "StopMotion")
+
+        val initUri = FileProvider.getUriForFile(
+            activity,
+            "${activity.packageName}.fileprovider",
+            stopMotionDir
+        )
+
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, initUri)
+        }
+        activity.startActivityForResult(intent, REQUEST_TREE)
+    }
+
+    fun getSubfolderUriFromTreeUri(context: Context, treeUri: Uri, subfolder: String): Uri? {
+        val baseDir = DocumentFile.fromTreeUri(context, treeUri) ?: return null
+        val target = baseDir.findFile(subfolder)
+            ?: baseDir.createDirectory(subfolder)
+        return target?.uri
+    }
+
+    fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
+        val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return
+        val jpgs = dir.listFiles()
+            .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
+            .sortedBy { it.name!!.lowercase() }
+
+        jpgs.forEachIndexed { index, doc ->
+            val newName = "%05d.jpg".format(index)
+            if (doc.name != newName) {
+                val ok = doc.renameTo(newName)
+                Log.i("SAFRename", "Renamed ${doc.name} → $newName : $ok")
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_TREE && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { treeUri ->
+                val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                contentResolver.takePersistableUriPermission(treeUri, flags)
+
+                getSharedPreferences("saf_prefs", MODE_PRIVATE)
+                    .edit()
+                    .putString("stopmotion_tree", treeUri.toString())
+                    .apply()
+            }
+        }
+    }
+
+    fun getSavedStopMotionTreeUri(context: Context): Uri? {
+        val uriStr = context
+            .getSharedPreferences("saf_prefs", Context.MODE_PRIVATE)
+            .getString("stopmotion_tree", null)
+        return uriStr?.let { Uri.parse(it) }
+    }
+
     companion object {
+        private const val REQUEST_TREE = 222
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     }
