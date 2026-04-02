@@ -6,118 +6,29 @@
     android:orientation="vertical"
     android:background="#000000">
 
-    <!-- Preview Image - 2/3 of screen -->
+    <!-- Preview Image — 2/3 of screen -->
     <ImageView
         android:id="@+id/previewImageView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2.5"
+        android:layout_weight="2"
         android:scaleType="fitCenter"
         android:background="#000000" />
 
-    <!-- Controls Panel - 1/3 of screen -->
+    <!-- Controls Panel — 1/3 of screen -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:background="#222222"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:gravity="top">
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:gravity="center_vertical">
 
-        <!-- Frame Counter -->
-
-        <!-- Seekbar -->
-        <SeekBar
-            android:id="@+id/frameSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
-
-        <!-- Playback Controls + FPS all in one row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/playButton"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:text="▶ Play"
-                android:textSize="13sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp" />
-
-            <Button
-                android:id="@+id/closeButton"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:text="✕ Close"
-                android:textSize="13sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:layout_marginStart="8dp" />
-
-            <!-- Divider -->
-            <View
-                android:layout_width="1dp"
-                android:layout_height="24dp"
-                android:background="#555555"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="FPS:"
-                android:textColor="#AAAAAA"
-                android:textSize="13sp"
-                android:layout_marginEnd="6dp" />
-
-            <Button
-                android:id="@+id/fps8Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:text="8"
-                android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp" />
-
-            <Button
-                android:id="@+id/fps12Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:text="12"
-                android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:layout_marginStart="4dp" />
-
-            <Button
-                android:id="@+id/fps24Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:text="24"
-                android:textSize="13sp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:layout_marginStart="4dp" />
-
+        <!-- Frame counter -->
         <TextView
             android:id="@+id/frameCounter"
             android:layout_width="match_parent"
@@ -126,7 +37,187 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:gravity="center"
-            android:paddingBottom="2dp" />
+            android:paddingBottom="1dp" />
+
+        <!-- Seekbar -->
+        <SeekBar
+            android:id="@+id/frameSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp" />
+
+        <!-- Row 1: Playback controls + FPS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="4dp">
+
+            <Button
+                android:id="@+id/playButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="▶ Play"
+                android:textSize="13sp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/closeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="✕ Close"
+                android:textSize="13sp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:layout_marginStart="4dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#555555"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FPS:"
+                android:textColor="#AAAAAA"
+                android:textSize="13sp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/fps8Button"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="8"
+                android:textSize="13sp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/fps12Button"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="12"
+                android:textSize="13sp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:layout_marginStart="2dp" />
+
+            <Button
+                android:id="@+id/fps24Button"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="24"
+                android:textSize="13sp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:layout_marginStart="2dp" />
+
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#444444"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Row 2: Edit controls + Export -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/moveLeftButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="◀"
+                android:textSize="14sp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:contentDescription="Move frame left" />
+
+            <Button
+                android:id="@+id/moveRightButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="▶"
+                android:textSize="14sp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="Move frame right" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#555555"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/renameButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="✎ Rename"
+                android:textSize="12sp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
+
+            <Button
+                android:id="@+id/deleteButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="🗑 Delete"
+                android:textSize="12sp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:layout_marginStart="4dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#555555"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/exportButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="⬆ MP4"
+                android:textSize="12sp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp" />
 
         </LinearLayout>
 

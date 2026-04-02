@@ -1,402 +1,182 @@
 package com.robin.stopmotioncamera2.utils
 
-import android.content.ContentUris
+import android.Manifest
+import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import androidx.documentfile.provider.DocumentFile
-import android.provider.DocumentsContract
-import android.content.ContentValues
 
+// ── Scene directory ─────────────────────────────────────────────────────────────
 
-fun renameAllJpgsWithSAF(context: Context, folderUri: Uri) {
-    // Use DocumentsContract to query ALL files
-    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-        folderUri,
-        DocumentsContract.getDocumentId(folderUri)
-    )
-    
-    val projection = arrayOf(
-        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-        DocumentsContract.Document.COLUMN_DISPLAY_NAME
-    )
-    
-    val jpgFiles = mutableListOf<Pair<Uri, String>>() // Uri and current name
-    
-    context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
-        val idCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-        val nameCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        
-        while (cursor.moveToNext()) {
-            val name = cursor.getString(nameCol)
-            if (name.endsWith(".jpg", ignoreCase = true)) {
-                val docId = cursor.getString(idCol)
-                val docUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId)
-                jpgFiles.add(Pair(docUri, name))
-            }
+/**
+ * Returns (and creates if needed) the app-private external directory for a scene.
+ * Path: /sdcard/Android/data/<package>/files/scenes/NNN/
+ * No permissions required on Android 10+. Not scanned by MediaStore.
+ */
+fun getSceneDir(context: Context, scene: Int): File =
+    File(context.getExternalFilesDir(null), "scenes/%03d".format(scene))
+        .also { if (!it.exists()) it.mkdirs() }
+
+// ── Frame listing ───────────────────────────────────────────────────────────────
+
+/**
+ * Returns all JPG frames for a scene sorted by filename (00000.jpg … 99999.jpg).
+ * Instant — no MediaStore query involved.
+ */
+fun getFrameFiles(context: Context, scene: Int): List<File> =
+    getSceneDir(context, scene)
+        .listFiles { f -> f.extension.equals("jpg", ignoreCase = true) }
+        ?.sortedBy { it.name }
+        ?: emptyList()
+
+// ── Save a new frame ────────────────────────────────────────────────────────────
+
+/**
+ * Compresses [bitmap] to JPEG and appends it to the scene folder.
+ * Filename is the next sequential number (e.g. 00007.jpg).
+ */
+fun saveFrame(context: Context, bitmap: Bitmap, scene: Int): File {
+    val dir = getSceneDir(context, scene)
+    val next = "%05d.jpg".format(getFrameFiles(context, scene).size)
+    val file = File(dir, next)
+    try {
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+        Log.i("FileUtils", "saveFrame → ${file.name}")
+    } catch (e: IOException) {
+        Log.e("FileUtils", "saveFrame failed: ${e.message}")
+    }
+    return file
+}
+
+// ── Delete ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Deletes [file] then renumbers the remaining frames so the sequence stays tight.
+ */
+fun deleteFrame(context: Context, file: File, scene: Int) {
+    if (file.delete()) {
+        Log.i("FileUtils", "Deleted ${file.name}")
+        renumberFrames(context, scene)
+    } else {
+        Log.e("FileUtils", "Could not delete ${file.name}")
+    }
+}
+
+// ── Reorder ─────────────────────────────────────────────────────────────────────
+
+/** Swaps the frame at [index] with the one before it. Returns the new index. */
+fun moveFrameLeft(context: Context, index: Int, scene: Int): Int {
+    if (index <= 0) return index
+    swapFrameFiles(context, index - 1, index, scene)
+    return index - 1
+}
+
+/** Swaps the frame at [index] with the one after it. Returns the new index. */
+fun moveFrameRight(context: Context, index: Int, scene: Int): Int {
+    val size = getFrameFiles(context, scene).size
+    if (index >= size - 1) return index
+    swapFrameFiles(context, index, index + 1, scene)
+    return index + 1
+}
+
+private fun swapFrameFiles(context: Context, a: Int, b: Int, scene: Int) {
+    val frames = getFrameFiles(context, scene)
+    val fa = frames[a]
+    val fb = frames[b]
+    val tmp = File(fa.parent, "__swap__.jpg")
+    fa.renameTo(tmp)
+    fb.renameTo(fa)
+    tmp.renameTo(fb)
+    Log.i("FileUtils", "Swapped ${fa.name} ↔ ${fb.name}")
+}
+
+// ── Renumber ────────────────────────────────────────────────────────────────────
+
+/**
+ * Renames all JPGs in the scene folder to a tight 00000.jpg … sequence.
+ * Two-pass approach avoids rename collisions when e.g. 00001 → 00000 while
+ * 00000 still exists.
+ */
+fun renumberFrames(context: Context, scene: Int) {
+    val dir = getSceneDir(context, scene)
+    val files = dir.listFiles { f ->
+        f.extension.equals("jpg", ignoreCase = true) && f.name != "__swap__.jpg"
+    }?.sortedBy { it.name } ?: return
+
+    // Pass 1 → temporary names
+    files.forEachIndexed { i, f ->
+        f.renameTo(File(dir, "tmp_%05d.jpg".format(i)))
+    }
+    // Pass 2 → final names
+    dir.listFiles { f -> f.name.startsWith("tmp_") }
+        ?.sortedBy { it.name }
+        ?.forEachIndexed { i, f ->
+            f.renameTo(File(dir, "%05d.jpg".format(i)))
         }
-    }
-    
-    // Sort by name (alphabetically)
-    val sorted = jpgFiles.sortedBy { it.second.lowercase() }
-    
-    Log.i("SAFRename", "Found ${sorted.size} JPG files to rename")
-    
-    // Rename each file
-    sorted.forEachIndexed { index, (uri, oldName) ->
-        val newName = "%05d.jpg".format(index)
-        if (oldName != newName) {
-            val values = ContentValues().apply {
-                put(DocumentsContract.Document.COLUMN_DISPLAY_NAME, newName)
-            }
-            
-            try {
-                context.contentResolver.update(uri, values, null, null)
-                Log.i("SAFRename", "Renamed $oldName → $newName")
-            } catch (e: Exception) {
-                Log.e("SAFRename", "Failed to rename $oldName: ${e.message}")
-            }
-        }
-    }
-    
-    Log.i("SAFRename", "Renaming complete")
+    Log.i("FileUtils", "renumberFrames: scene $scene → ${files.size} frames")
 }
 
+// ── Rename ──────────────────────────────────────────────────────────────────────
 
-
-// Replace the nextFile() function in FileUtils.kt with this:
-
-fun nextFile(context: Context, outputFolder: String): String {
-    var nextNumber = countImagesInFolder(context, outputFolder)
-    var filename = String.format("%05d.jpg", nextNumber)
-    
-    // Double-check: if this filename already exists, increment until we find an available one
-    var attempts = 0
-    while (fileExists(context, outputFolder, filename) && attempts < 20) {
-        Log.w("FileUtils", "File $filename already exists in $outputFolder, trying next number")
-        nextNumber++
-        filename = String.format("%05d.jpg", nextNumber)
-        attempts++
+/**
+ * Renames a single frame file. [newBaseName] should NOT include the .jpg extension.
+ * Invalid characters are replaced with underscores.
+ * Returns the renamed File (or the original if rename failed).
+ */
+fun renameFrame(file: File, newBaseName: String): File {
+    val safe = newBaseName.trim().replace(Regex("[^a-zA-Z0-9_\\-]"), "_")
+    if (safe.isEmpty()) return file
+    val dest = File(file.parent, "$safe.jpg")
+    return if (file.renameTo(dest)) {
+        Log.i("FileUtils", "Renamed ${file.name} → ${dest.name}")
+        dest
+    } else {
+        Log.e("FileUtils", "Failed to rename ${file.name}")
+        file
     }
-    
-    if (attempts > 0) {
-        Log.i("FileUtils", "nextFile($outputFolder) = $filename after $attempts collision checks")
-    }
-    return filename
 }
 
-private fun fileExists(context: Context, folderName: String, filename: String): Boolean {
-    val projection = arrayOf(MediaStore.Images.Media._ID)
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? AND ${MediaStore.Images.Media.DISPLAY_NAME} = ?"
-    val selectionArgs = arrayOf("%$folderName%", filename)
-    
-    val cursor = context.contentResolver.query(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        projection,
-        selection,
-        selectionArgs,
-        null
-    )
-    
-    val exists = cursor?.use { it.count > 0 } ?: false
-    cursor?.close()
-    return exists
-}
+// ── Permissions ─────────────────────────────────────────────────────────────────
 
+fun hasCameraPermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
 
+// ── Save final MP4 to public Pictures/StopMotion ────────────────────────────────
 
-fun outputFolder(scene: Int): String {
-    val dateFolder = SimpleDateFormat("yyyyMMdd", Locale.UK).format(Date())
-    val sceneFolder = String.format("%03d", scene)
-    return "StopMotion/$dateFolder-$sceneFolder"
-}
-
-
-fun saveImageToPublicPictures(
-    context: Context,
-    bitmap: Bitmap,
-    subfolder: String,
-    filename: String
-): Uri? {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        put(
-            MediaStore.Images.Media.RELATIVE_PATH,
-            "${Environment.DIRECTORY_PICTURES}/$subfolder"
-        )
-        put(MediaStore.Images.Media.IS_PENDING, 1)
+/**
+ * Copies [source] MP4 into the public Pictures/StopMotion folder via MediaStore.
+ * This is the ONLY place in the new architecture that touches MediaStore.
+ */
+fun saveVideoToPublicPictures(context: Context, source: File, displayName: String): Uri? {
+    val values = ContentValues().apply {
+        put(MediaStore.Video.Media.DISPLAY_NAME, displayName)
+        put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+        put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/StopMotion")
+        put(MediaStore.Video.Media.IS_PENDING, 1)
     }
-
     val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-
-    if (uri != null) {
-        try {
-            resolver.openOutputStream(uri)?.use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-            }
-            // Mark as not pending so it's visible to media scanners
-            contentValues.clear()
-            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(uri, contentValues, null, null)
-        } catch (e: IOException) {
-            e.printStackTrace()
-            return null
+    val uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: return null
+    try {
+        resolver.openOutputStream(uri)?.use { out ->
+            source.inputStream().use { it.copyTo(out) }
         }
+        values.clear()
+        values.put(MediaStore.Video.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        Log.i("FileUtils", "Video saved to public Pictures: $displayName")
+    } catch (e: IOException) {
+        Log.e("FileUtils", "saveVideoToPublicPictures failed: ${e.message}")
+        resolver.delete(uri, null, null)
+        return null
     }
     return uri
-}
-
-
-fun countImagesInFolder(context: Context, folderName: String): Int {
-    val cursor = getCursor(context, folderName)
-    var count = 0
-    cursor?.use {
-        while (it.moveToNext()) {
-            count++
-        }
-    }
-    cursor?.close()
-    Log.i("FileUtils", "countImagesInFolder($folderName) = $count")
-    return count
-}
-
-fun getCursor(context: Context, folderName: String, dir: String = "ASC"): Cursor? {
-    val projection = arrayOf(
-        MediaStore.Images.Media._ID,
-        MediaStore.Images.Media.DISPLAY_NAME,
-        MediaStore.Images.Media.RELATIVE_PATH
-    )
-
-    // FIXED: Actually use the selection to filter by folder
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
-    val selectionArgs = arrayOf("%$folderName%")
-    val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} $dir"
-
-    val cursor = context.contentResolver.query(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        projection,
-        selection,  // FIXED: Use the selection
-        selectionArgs,  // FIXED: Use the selection args
-        sortOrder
-    )
-    
-    Log.i("FileUtils", "getCursor($folderName) returned ${cursor?.count ?: 0} results")
-    return cursor
-}
-
-
-fun getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int): MutableList<Uri?> {
-    val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return mutableListOf()
-    
-    // Use DocumentsContract to query ALL files, not just owned ones
-    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-        folderUri,
-        DocumentsContract.getDocumentId(folderUri)
-    )
-    
-    val projection = arrayOf(
-        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-        DocumentsContract.Document.COLUMN_MIME_TYPE
-    )
-    
-    val jpgUris = mutableListOf<Uri>()
-    
-    context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
-        val idCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-        val nameCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        val mimeCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
-        
-        while (cursor.moveToNext()) {
-            val name = cursor.getString(nameCol)
-            val mime = cursor.getString(mimeCol)
-            
-            if (name.endsWith(".jpg", ignoreCase = true) || mime == "image/jpeg") {
-                val docId = cursor.getString(idCol)
-                val docUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId)
-                jpgUris.add(docUri)
-            }
-        }
-    }
-    
-    // Sort by name DESC (newest first) and take N
-    val sorted = jpgUris
-        .sortedByDescending { uri ->
-            DocumentFile.fromSingleUri(context, uri)?.name ?: ""
-        }
-        .take(numImages)
-    
-    val result = sorted.map { it as Uri? }.toMutableList()
-    Log.i("FileUtils", "getLastImagesByNameWithSAF: Found ${result.size} images out of ${jpgUris.size} total")
-    return result
-}
-
-
-fun getLastImagesByName(context: Context, folderName: String, numImages: Int): MutableList<Uri?> {
-
-    val cursor = getCursor(context, folderName, "DESC")
-    val imageUris = mutableListOf<Uri?>()
-
-    cursor?.use {
-        var count = 0
-        while (it.moveToNext() && count < numImages) {
-            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-            val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
-            val path = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH))
-            val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-            imageUris.add(uri)
-            Log.i("FileUtils", "getLastImagesByName: Added $path$name")
-            count++
-        }
-    }
-
-    Log.i("FileUtils", "getLastImagesByName($folderName, $numImages) returned ${imageUris.size} URIs")
-    return imageUris
-}
-
-
-fun renameAllJpgImagesAlphabetically(
-    context: Context,
-    folderName: String
-) {
-    val fileList = mutableListOf<Triple<Long, String, String>>() // ID, current name, path
-    val contentResolver = context.contentResolver
-
-    val cursor = getCursor(context, folderName)
-
-    cursor?.use {
-        val idCol = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-        val nameCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-        val pathCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH)
-
-        while (it.moveToNext()) {
-            val id = it.getLong(idCol)
-            val name = it.getString(nameCol)
-            val path = it.getString(pathCol)
-            if (name.lowercase().endsWith(".jpg")) {
-                Log.i("Rename", "Found: $path$name")
-                fileList.add(Triple(id, name, path))
-            }
-        }
-    }
-
-    Log.i("Rename", "Found ${fileList.size} .jpg files in $folderName")
-
-    // Sort by name to ensure consistent ordering
-    val sortedFiles = fileList.sortedBy { it.second.lowercase() }
-
-    sortedFiles.forEachIndexed { index, (id, oldName, path) ->
-        val newName = String.format("%05d.jpg", index)
-        val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-
-        if (oldName != newName) {
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, newName)
-            }
-
-            val updated = contentResolver.update(uri, values, null, null)
-            Log.i("Rename", "Renamed $oldName ➝ $newName (updated=$updated)")
-        }
-    }
-
-    Log.i("Rename", "Renaming complete")
-}
-
-
-suspend fun listing(
-    context: Context,
-    folderName: String
-) = withContext(Dispatchers.IO) {
-    val contentResolver = context.contentResolver
-    val projection = arrayOf(
-        MediaStore.Images.Media._ID,
-        MediaStore.Images.Media.DISPLAY_NAME,
-        MediaStore.Images.Media.RELATIVE_PATH
-    )
-
-    val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
-    val selectionArgs = arrayOf("%$folderName%")
-    val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
-
-    val fileList = mutableListOf<Triple<Long, String, String>>() // ID, current name, path
-
-    contentResolver.query(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        projection,
-        selection,
-        selectionArgs,
-        sortOrder
-    )?.use { cursor ->
-        val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-        val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-        val pathCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.RELATIVE_PATH)
-        var tick = 0
-        while (cursor.moveToNext()) {
-            val id = cursor.getLong(idCol)
-            val name = cursor.getString(nameCol)
-            val path = cursor.getString(pathCol)
-            Log.i("Listing", "Found: $path$name $tick")
-            tick++
-            if (name.lowercase().endsWith(".jpg")) {
-                fileList.add(Triple(id, name, path))
-            }
-        }
-    }
-
-    Log.i("Listing", "Found ${fileList.size} .jpg files in $folderName")
-
-    fileList.forEachIndexed { index, (id, oldName, path) ->
-        Log.i("Listing", "[$index] $oldName")
-    }
-}
-// Add these SAF functions to your existing FileUtils.kt
-
-
-/**
- * Get last N images using SAF instead of MediaStore
- * This works even if files are "owned" by a previous app installation
- */
-fun old_getLastImagesByNameWithSAF(context: Context, folderUri: Uri, numImages: Int): MutableList<Uri?> {
-    val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return mutableListOf()
-    
-    val jpgs = dir.listFiles()
-        .filter { it.isFile && it.name?.endsWith(".jpg", true) == true }
-        .sortedByDescending { it.name!!.lowercase() }  // DESC order (newest first)
-        .take(numImages)
-    
-    val imageUris = jpgs.map { it.uri as Uri? }.toMutableList()
-    
-    Log.i("FileUtils", "getLastImagesByNameWithSAF: Found ${imageUris.size} images")
-    return imageUris
-}
-
-/**
- * Count images using SAF
- */
-fun countImagesWithSAF(context: Context, folderUri: Uri): Int {
-    val dir = DocumentFile.fromTreeUri(context, folderUri) ?: return 0
-    val count = dir.listFiles()
-        .count { it.isFile && it.name?.endsWith(".jpg", true) == true }
-    Log.i("FileUtils", "countImagesWithSAF: $count images")
-    return count
-}
-
-/**
- * Get next filename using SAF
- */
-fun nextFileWithSAF(context: Context, folderUri: Uri): String {
-    val count = countImagesWithSAF(context, folderUri)
-    return String.format("%05d.jpg", count)
 }
