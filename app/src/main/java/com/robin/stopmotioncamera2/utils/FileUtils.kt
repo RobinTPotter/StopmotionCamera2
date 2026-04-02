@@ -146,9 +146,9 @@ fun renameFrame(file: File, newBaseName: String): File {
 
 // ── Permissions ─────────────────────────────────────────────────────────────────
 
-fun hasCameraPermission(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
+//fun hasCameraPermission(context: Context): Boolean =
+//    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+//            PackageManager.PERMISSION_GRANTED
 
 // ── Save final MP4 to public Pictures/StopMotion ────────────────────────────────
 
