@@ -57,7 +57,7 @@
             <Button
                 android:id="@+id/playButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="▶ Play"
                 android:textSize="13sp"
                 android:paddingStart="6dp"
@@ -65,10 +65,18 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp" />
 
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#555555"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
+
             <Button
                 android:id="@+id/closeButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="✕ Close"
                 android:textSize="13sp"
                 android:paddingStart="6dp"
@@ -96,7 +104,7 @@
             <Button
                 android:id="@+id/fps8Button"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="8"
                 android:textSize="13sp"
                 android:paddingStart="5dp"
@@ -107,7 +115,7 @@
             <Button
                 android:id="@+id/fps12Button"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="12"
                 android:textSize="13sp"
                 android:paddingStart="5dp"
@@ -119,7 +127,7 @@
             <Button
                 android:id="@+id/fps24Button"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="24"
                 android:textSize="13sp"
                 android:paddingStart="5dp"
@@ -128,11 +136,18 @@
                 android:minHeight="0dp"
                 android:layout_marginStart="2dp" />
 
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="#555555"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
 
             <Button
                 android:id="@+id/moveLeftButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="◀"
                 android:textSize="14sp"
                 android:paddingStart="8dp"
@@ -144,7 +159,7 @@
             <Button
                 android:id="@+id/moveRightButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="▶"
                 android:textSize="14sp"
                 android:paddingStart="8dp"
@@ -165,7 +180,7 @@
             <Button
                 android:id="@+id/deleteButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="🗑 Delete"
                 android:textSize="12sp"
                 android:paddingStart="6dp"
@@ -185,7 +200,7 @@
             <Button
                 android:id="@+id/exportButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:text="⬆ MP4"
                 android:textSize="12sp"
                 android:paddingStart="6dp"
