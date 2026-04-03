@@ -128,21 +128,6 @@
                 android:minHeight="0dp"
                 android:layout_marginStart="2dp" />
 
-        </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#444444"
-            android:layout_marginBottom="4dp" />
-
-        <!-- Row 2: Edit controls + Export -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
 
             <Button
                 android:id="@+id/moveLeftButton"
@@ -169,7 +154,6 @@
                 android:layout_marginStart="2dp"
                 android:contentDescription="Move frame right" />
 
-            <!-- Divider -->
             <View
                 android:layout_width="1dp"
                 android:layout_height="24dp"
@@ -177,16 +161,6 @@
                 android:layout_marginStart="6dp"
                 android:layout_marginEnd="6dp" />
 
-            <Button
-                android:id="@+id/renameButton"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="✎ Rename"
-                android:textSize="12sp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp" />
 
             <Button
                 android:id="@+id/deleteButton"

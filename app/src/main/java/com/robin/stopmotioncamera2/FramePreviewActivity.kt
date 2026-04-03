@@ -77,7 +77,6 @@ class FramePreviewActivity : AppCompatActivity() {
         // Edit buttons
         findViewById<Button>(R.id.moveLeftButton).setOnClickListener  { onMoveLeft() }
         findViewById<Button>(R.id.moveRightButton).setOnClickListener { onMoveRight() }
-        findViewById<Button>(R.id.renameButton).setOnClickListener    { onRename() }
         findViewById<Button>(R.id.deleteButton).setOnClickListener    { confirmDelete() }
         findViewById<Button>(R.id.exportButton).setOnClickListener    { onExport() }
 
