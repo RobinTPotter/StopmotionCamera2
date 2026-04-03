@@ -1,6 +1,7 @@
 package com.robin.stopmotioncamera2
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -43,7 +44,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var label: TextView
 
     private var currentScene: Int = 0
-    private val onionSkins: Int = 2
+
+    // Settings — loaded from SharedPreferences, refreshed in onResume
+    private var onionSkins: Int = 2
+    private var opacityStart: Float = 0.5f
+    private var opacityEnd: Float = 0.35f
+    private var opacityTotal: Float = 0.35f
+    private var showCrosshair: Boolean = true
+    private var showThirds: Boolean = false
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,8 +69,17 @@ class MainActivity : AppCompatActivity() {
         onionSkinView = findViewById(R.id.onionSkinView)
         label         = findViewById(R.id.label)
 
+        loadSettings()
+
         findViewById<Button>(R.id.captureButton).setOnClickListener {
             takePicture()
+        }
+
+        findViewById<Button>(R.id.previewButton).setOnClickListener {
+            startActivity(
+                Intent(this, FramePreviewActivity::class.java)
+                    .putExtra("SCENE_NUMBER", currentScene)
+            )
         }
 
         findViewById<Button>(R.id.upFolder).setOnClickListener {
@@ -77,16 +94,33 @@ class MainActivity : AppCompatActivity() {
             refreshOnionSkin()
         }
 
-        // ── NEW: open the preview / editor screen ──────────────────────────
-        findViewById<Button>(R.id.previewButton).setOnClickListener {
-            startActivity(
-                Intent(this, FramePreviewActivity::class.java)
-                    .putExtra("SCENE_NUMBER", currentScene)
-            )
+        findViewById<Button>(R.id.settingsButton).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         if (hasCameraPermission(this)) startCamera()
         else ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reload settings every time we return from SettingsActivity
+        loadSettings()
+        refreshOnionSkin()
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    private fun loadSettings() {
+        val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        onionSkins    = prefs.getInt("onion_skins", 2)
+        opacityStart  = prefs.getFloat("opacity_start", 0.5f)
+        opacityEnd    = prefs.getFloat("opacity_end", 0.35f)
+        opacityTotal  = prefs.getFloat("opacity_total", 0.35f)
+        showCrosshair = prefs.getBoolean("show_crosshair", true)
+        showThirds    = prefs.getBoolean("show_thirds", false)
+        // opacityTotal controls the overall ImageView alpha for the onion skin overlay
+        onionSkinView.alpha = opacityTotal
     }
 
     // ── Onion skin ────────────────────────────────────────────────────────────
@@ -94,7 +128,14 @@ class MainActivity : AppCompatActivity() {
     private fun refreshOnionSkin() {
         val frames = getFrameFiles(this, currentScene)
         val bitmap = if (frames.isNotEmpty()) {
-            updateOnionSkins(frames, onionSkins)
+            updateOnionSkins(
+                frames        = frames,
+                skins         = onionSkins,
+                showCrosshair = showCrosshair,
+                showThirds    = showThirds,
+                opacityStart  = opacityStart,
+                opacityEnd    = opacityEnd
+            )
         } else {
             Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
         }
@@ -119,7 +160,6 @@ class MainActivity : AppCompatActivity() {
                         Log.e("MainActivity", "Failed to decode captured image")
                         return
                     }
-                    // Write directly to app-private external storage — no SAF, no MediaStore
                     val saved = saveFrame(this@MainActivity, bitmap, currentScene)
                     bitmap.recycle()
                     tempFile.delete()
