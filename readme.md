@@ -8,7 +8,7 @@
 
 # Revenge of the Stopmotion Camera 
 
-Takes photographs using the back camera and stores in `Pictures/StopMotion/YYYYMMDD-NNN/FFFFF.jpg` where N is the zero padded "scene" number, to try and help organize things, and F is the zero padded frame number. If frames are deleted the app _should_ renumber sequentially.
+Takes photographs using the back camera and stores in internal storage `NNN/FFFFF.jpg` where N is the zero padded "scene" number, to try and help organize things, and F is the zero padded frame number. If frames are deleted the app _should_ renumber sequentially.
 
 Onionskinning shows the previous N frames transparently.
 
@@ -17,7 +17,7 @@ touch preview to focus, would be nice if light meter was separate.
 buttons:
 
 - `capture` - takes a frame
-- `preview` - opens a preview activity, scrub through and play and several speeds
+- `preview` - opens a preview activity, scrub through and play and several speeds, minimal editing and export video to `Pictures/StopMotion/stopmotion_NNN_timestamp.mp4`
 - `scene+` - increments the scene number
 - `scene-` - decrements the scene number (min is zero)
 - `settings` - shows settings screen
