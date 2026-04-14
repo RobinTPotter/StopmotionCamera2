@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshOnionSkin() {
         val frames = getFrameFiles(this, currentScene)
-        val bitmap = if (frames.isNotEmpty()) {
+        val bitmap = 
             updateOnionSkins(
                 frames        = frames,
                 skins         = onionSkins,
@@ -136,9 +136,7 @@ class MainActivity : AppCompatActivity() {
                 opacityStart  = opacityStart,
                 opacityEnd    = opacityEnd
             )
-        } else {
-            Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
-        }
+        
         onionSkinView.setImageBitmap(bitmap)
         label.text = if (frames.isNotEmpty()) "Scene $currentScene  [${frames.size} frames]"
                      else "Scene $currentScene"

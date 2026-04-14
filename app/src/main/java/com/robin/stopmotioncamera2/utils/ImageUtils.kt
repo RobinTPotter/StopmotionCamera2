@@ -27,7 +27,6 @@ fun updateOnionSkins(
     val canvas = Canvas(result)
 
     val numToDraw = minOf(frames.size, skins)
-    if (numToDraw == 0) return result
 
     // Take the last N frames (oldest of the recent window first)
     val window = frames.takeLast(numToDraw)
