@@ -83,7 +83,7 @@
             android:id="@+id/label"
             android:layout_column="0"
             android:layout_row="5"
-            android:layout_columnSpan="6"
+            android:layout_columnSpan="5"
             android:background="#88FFFFFF"
             android:textColor="@color/black" />
     </GridLayout>
