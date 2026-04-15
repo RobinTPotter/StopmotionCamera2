@@ -44,8 +44,8 @@
 
         <Space
             android:layout_row="1"
-            android:layout_column="0" />
-1
+            android:layout_column="5" />
+
         <Button
             android:id="@+id/previewButton"
             android:layout_row="0"
