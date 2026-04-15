@@ -42,7 +42,6 @@
             android:textColor="@android:color/white"
             android:text="@string/capture_frame" />
 
-
         <Button
             android:id="@+id/previewButton"
             android:layout_row="0"
