@@ -47,7 +47,7 @@
             android:layout_row="0"
             android:layout_column="5"
             android:layout_gravity="end"
-h            android:background="@drawable/rounded"
+            android:background="@drawable/rounded"
             android:textColor="@android:color/white"
             android:text="Preview" />
 
