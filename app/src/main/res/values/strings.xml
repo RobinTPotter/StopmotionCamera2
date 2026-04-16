@@ -3,4 +3,17 @@
     <string name="onion_skin">onion skin</string>
     <string name="capture_frame">Capture</string>
     <string name="encode">Encode</string>
+    <string name="save">Save</string>
+    <string name="show_3rds">Show 3rds</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings">Settings</string>
+    <string name="number_of_onion_skins">Number of Onion Skins</string>
+    <string name="_2">2</string>
+    <string name="opacity_start_newest_frame">Opacity Start (newest frame)</string>
+    <string name="_0_50">0.50</string>
+    <string name="opacity_end_oldest_frame">Opacity End (oldest frame)</string>
+    <string name="_0_35">0.35</string>
+    <string name="opacity_onion_skin">Opacity Onion Skin</string>
+    <string name="_0_35b">0.35</string>
+    <string name="show_crosshair">Show crosshair</string>
 </resources>
