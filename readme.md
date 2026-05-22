@@ -8,7 +8,7 @@
 
 # Revenge of the Stopmotion Camera 
 
-Takes photographs using the back camera and stores in internal storage `NNN/FFFFF.jpg` where N is the zero padded "scene" number, to try and help organize things, and F is the zero padded frame number. If frames are deleted the app _should_ renumber sequentially.
+Takes photographs using the back camera and stores in internal storage `NNN/FFFFF.jpg` where N is the zero padded "scene" number, to try and help organize things, and F is the zero padded frame number. If frames are deleted the app _should_ renumber sequentially. Recent update has the pictures stored internally. Using adb one can extract the pictures, however a cheap, export mp4 can be written out using the preview menu to internal/Pictures/StopMotion.
 
 Onionskinning shows the previous N frames transparently.
 
@@ -40,4 +40,4 @@ sliders for:
 when thinking about opacity, bear in mind the layers are drawn sequentially, you will see a sharp drop off in the lower layers if the setting is less that the topmost)
 
 
-Uses kotlin and cameraX
+written in kotlin using cameraX
